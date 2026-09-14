@@ -1,0 +1,13 @@
+# Entorno virtual y dependencias
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Variables de entorno (CRÍTICO PARA EL EXAMEN)
+.env
+
+# Archivos de Vercel y SO
+.vercel/
+.DS_Store
+Thumbs.db
