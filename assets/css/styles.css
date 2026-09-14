@@ -1,0 +1,28 @@
+/* Altura mínima para los contenedores de resultados de traducción */
+#docs-original-text, 
+#docs-translated-text, 
+#vision-translated-text {
+    min-height: 150px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Estilos específicos para el historial del chat */
+#chat-history {
+    scroll-behavior: smooth;
+    background-color: #f8f9fa;
+}
+
+/* Transición suave para los botones al cargar */
+.btn {
+    transition: all 0.3s ease;
+}
+
+/* Ajuste para el footer en pantallas muy grandes */
+body {
+    display: flex;
+    flex-direction: column;
+}
+main {
+    flex: 1 0 auto;
+}
