@@ -1,144 +1,87 @@
-import os
-import json
-import base64
-import tempfile
+﻿import os, json, base64, tempfile
 from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
-import PyPDF2
-import docx
+import PyPDF2, docx
+from fpdf import FPDF
 
 class BaseTranslatorHandler(BaseHTTPRequestHandler):
-    """Clase base para manejar CORS y respuestas JSON (POO)."""
-    
     def _set_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-
     def _send_json_response(self, status_code, data):
         self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self._set_cors_headers()
         self.end_headers()
         self.wfile.write(json.dumps(data).encode('utf-8'))
-
     def do_OPTIONS(self):
         self.send_response(200)
         self._set_cors_headers()
         self.end_headers()
 
 class DocumentExtractor:
-    """Encapsula la lógica de extracción de texto para múltiples formatos."""
-    
     @staticmethod
-    def extract_from_txt(file_path):
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-            return f.read().strip()
-
+    def extract_from_txt(path):
+        with open(path, "r", encoding="utf-8", errors="ignore") as f: return f.read().strip()
     @staticmethod
-    def extract_from_pdf(file_path):
+    def extract_from_pdf(path):
         text = ""
-        with open(file_path, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            for page in reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text += extracted + "\n\n"
+        with open(path, "rb") as f:
+            for page in PyPDF2.PdfReader(f).pages: text += (page.extract_text() or "") + "\n"
         return text.strip()
-
     @staticmethod
-    def extract_from_docx(file_path):
-        doc = docx.Document(file_path)
-        return "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
-
-class DocumentTranslator:
-    """Maneja la traducción del texto extraído de documentos con OpenAI."""
-    
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        # Se usa un modelo con mayor contexto por si el documento es largo
-        self.model = "gpt-4o-mini" 
-
-    def translate_text(self, text, target_lang):
-        prompt = (
-            f"Traduce el siguiente documento al {target_lang}. "
-            "Proporciona una traducción directa, fiel y literal del material original. "
-            "Conserva el formato, el tono exacto y la jerga sin suavizar ni censurar el contenido. "
-            "Omite por completo juicios de valor, advertencias de contenido o introducciones.\n\n"
-            f"Documento:\n{text}"
-        )
-        
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "Eres un traductor estricto de documentos técnicos y formales."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=4000,
-            temperature=0.3
-        )
-        return response.choices[0].message.content
+    def extract_from_docx(path):
+        return "\n".join([p.text for p in docx.Document(path).paragraphs if p.text.strip()])
 
 class handler(BaseTranslatorHandler):
-    """Punto de entrada REST para el procesamiento de documentos."""
-    
     def do_POST(self):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
-            if content_length == 0:
-                self._send_json_response(400, {"error": "Petición vacía."})
-                return
-                
             payload = json.loads(self.rfile.read(content_length))
-            file_b64 = payload.get("file")
-            filename = payload.get("filename", "")
-            target_lang = payload.get("target_language", "es")
+            file_bytes = base64.b64decode(payload.get("file"))
+            extension = payload.get("filename").split(".")[-1].lower()
             
-            if not file_b64 or not filename:
-                self._send_json_response(400, {"error": "Archivo no seleccionado o falta el nombre."})
-                return
-                
-            file_bytes = base64.b64decode(file_b64)
-            extension = filename.split(".")[-1].lower()
-            
-            allowed_extensions = ["txt", "pdf", "docx"]
-            if extension not in allowed_extensions:
-                self._send_json_response(400, {"error": f"Formato de archivo no permitido. Solo se admiten: {', '.join(allowed_extensions)}."})
-                return
-                
-            # Guardar el archivo temporalmente para procesarlo con las librerías
             with tempfile.NamedTemporaryFile(delete=False, suffix=f".{extension}") as tmp_file:
                 tmp_file.write(file_bytes)
                 tmp_path = tmp_file.name
 
             try:
-                # Extracción según el formato
-                extractor = DocumentExtractor()
-                if extension == "txt":
-                    extracted_text = extractor.extract_from_txt(tmp_path)
-                elif extension == "pdf":
-                    extracted_text = extractor.extract_from_pdf(tmp_path)
-                elif extension == "docx":
-                    extracted_text = extractor.extract_from_docx(tmp_path)
+                ext = DocumentExtractor()
+                text = ext.extract_from_txt(tmp_path) if extension=="txt" else (ext.extract_from_pdf(tmp_path) if extension=="pdf" else ext.extract_from_docx(tmp_path))
+                if len(text) < 5: return self._send_json_response(400, {"error": "Documento sin texto procesable."})
                 
-                if not extracted_text:
-                    self._send_json_response(400, {"error": "Documento sin contenido procesable o ilegible."})
-                    return
-                
-                # Limitación preventiva para evitar exceder el token limit (aprox. 15,000 caracteres)
-                if len(extracted_text) > 15000:
-                    self._send_json_response(400, {"error": "El documento excede el tamaño admitido para procesamiento de una sola pasada."})
-                    return
+                client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                trans_res = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": f"Traduce al {payload.get('target_language', 'es')} manteniendo el formato exacto:\n\n{text}"}]
+                )
+                translated_text = trans_res.choices[0].message.content
 
-                translator = DocumentTranslator()
-                translated_text = translator.translate_text(extracted_text, target_lang)
-                
+                # Generar DOCX
+                doc_out = docx.Document()
+                doc_out.add_paragraph(translated_text)
+                docx_path = f"{tmp_path}_out.docx"
+                doc_out.save(docx_path)
+                with open(docx_path, "rb") as f: docx_b64 = base64.b64encode(f.read()).decode('utf-8')
+
+                # Generar PDF
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Helvetica", size=11)
+                pdf.multi_cell(0, 6, text=translated_text)
+                pdf_path = f"{tmp_path}_out.pdf"
+                pdf.output(pdf_path)
+                with open(pdf_path, "rb") as f: pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+
                 self._send_json_response(200, {
-                    "original_text": extracted_text,
-                    "translated_text": translated_text
+                    "original_text": text,
+                    "translated_text": translated_text,
+                    "docx_b64": docx_b64,
+                    "pdf_b64": pdf_b64
                 })
             finally:
-                os.remove(tmp_path) # Limpieza del entorno
-            
+                for p in [tmp_path, f"{tmp_path}_out.docx", f"{tmp_path}_out.pdf"]:
+                    if os.path.exists(p): os.remove(p)
         except Exception as e:
-            self._send_json_response(500, {"error": f"Error procesando el documento: {str(e)}"})
+            self._send_json_response(500, {"error": str(e)})
