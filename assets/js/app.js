@@ -1,5 +1,5 @@
 // CONFIGURACIÓN: Reemplaza con la URL pública de tu backend en Vercel
-const VERCEL_URL = "https://TU-PROYECTO.vercel.app/api"; 
+const VERCEL_URL = "https://1-4-examen-tema-1-tendencias-actual-one.vercel.app/api"; 
 const api = new APIClient(VERCEL_URL);
 
 document.addEventListener('DOMContentLoaded', () => {
