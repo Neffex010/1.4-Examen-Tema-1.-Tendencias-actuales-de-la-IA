@@ -22,7 +22,7 @@ class AudioTranslator:
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    def process_audio(self, audio_bytes, target_lang):
+    def process_audio(self, audio_bytes, target_lang, voice):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp_file:
             tmp_file.write(audio_bytes)
             tmp_path = tmp_file.name
@@ -40,11 +40,11 @@ class AudioTranslator:
                 messages=[{"role": "user", "content": prompt}]
             )
             translated_text = translation_response.choices[0].message.content
-            tts_response = self.client.audio.speech.create(model="tts-1", voice="alloy", input=translated_text)
+            tts_response = self.client.audio.speech.create(model="tts-1", voice=voice, input=translated_text)
             tts_b64 = base64.b64encode(tts_response.content).decode('utf-8')
             return {"original_text": original_text, "translated_text": translated_text, "translated_audio_b64": tts_b64}
         finally:
-            os.remove(tmp_path)
+            if os.path.exists(tmp_path): os.remove(tmp_path)
 
 class handler(BaseTranslatorHandler):
     def do_POST(self):
@@ -52,7 +52,8 @@ class handler(BaseTranslatorHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             payload = json.loads(self.rfile.read(content_length))
             audio_bytes = base64.b64decode(payload.get("audio"))
-            result = AudioTranslator().process_audio(audio_bytes, payload.get("target_language"))
+            voice = payload.get("voice", "alloy")
+            result = AudioTranslator().process_audio(audio_bytes, payload.get("target_language"), voice)
             self._send_json_response(200, result)
         except Exception as e:
             self._send_json_response(500, {"error": str(e)})

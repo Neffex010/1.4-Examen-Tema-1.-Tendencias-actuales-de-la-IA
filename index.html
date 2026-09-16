@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traductor Inteligente Multimodal</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/styles.css">
+    <!-- Dependencia Ligera para Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="min-vh-100 bg-body-tertiary">
     <header class="bg-dark text-white shadow-sm pt-4 pb-3">
@@ -32,19 +36,23 @@
             <!-- Chat -->
             <div class="tab-pane fade show active" id="chat-pane" role="tabpanel">
                 <div class="d-flex justify-content-end mb-2">
-                    <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3"></i> Limpiar Chat</button>
+                    <button id="btn-export-chat" class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-download"></i> Exportar</button>
+                    <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3"></i> Limpiar</button>
                 </div>
                 <div id="chat-history" class="border rounded p-3 mb-3 bg-body-tertiary overflow-auto" style="height: 350px;">
                     <div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>
                 </div>
                 <form id="chat-form">
                     <div class="row g-2">
-                        <div class="col-md-8"><textarea id="chat-input" class="form-control" rows="2" placeholder="Escribe un mensaje..." required></textarea></div>
+                        <div class="col-md-8">
+                            <div class="input-group h-100">
+                                <textarea id="chat-input" class="form-control" rows="2" placeholder="Escribe o dicta un mensaje..." required></textarea>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-dictate" title="Dictar por voz"><i class="bi bi-mic"></i></button>
+                            </div>
+                        </div>
                         <div class="col-md-2"><select id="chat-target-lang" class="form-select h-100"><option value="en">A Inglés</option><option value="es">A Español</option></select></div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary w-100 h-100 fw-semibold">
-                                <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span><span class="btn-text"><i class="bi bi-send"></i> Enviar</span>
-                            </button>
+                            <button type="submit" class="btn btn-primary w-100 h-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-send"></i> Enviar</span></button>
                         </div>
                     </div>
                 </form>
@@ -54,10 +62,10 @@
             <div class="tab-pane fade" id="audio-pane" role="tabpanel">
                 <form id="audio-form">
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label class="form-label fw-medium text-muted small">Archivo de Audio</label>
                             <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="audio-drop" style="cursor:pointer;">
-                                <span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar audio</span>
+                                <span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Arrastrar audio</span>
                                 <input type="file" id="audio-input" class="d-none" accept="audio/*">
                             </div>
                         </div>
@@ -65,15 +73,19 @@
                             <label class="form-label d-block">&nbsp;</label>
                             <button type="button" id="btn-record" class="btn btn-outline-danger w-100 fw-semibold"><i class="bi bi-mic"></i> Grabar</button>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium text-muted small">Idioma destino</label>
+                        <div class="col-md-2">
+                            <label class="form-label fw-medium text-muted small">Idioma</label>
                             <select id="audio-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select>
                         </div>
                         <div class="col-md-2">
+                            <label class="form-label fw-medium text-muted small">Voz (TTS)</label>
+                            <select id="audio-voice" class="form-select">
+                                <option value="alloy">Alloy</option><option value="echo">Echo</option><option value="fable">Fable</option><option value="nova">Nova</option><option value="onyx">Onyx</option><option value="shimmer">Shimmer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label d-block">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                                <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span><span class="btn-text"><i class="bi bi-translate"></i> Traducir</span>
-                            </button>
+                            <button type="submit" class="btn btn-primary w-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-translate"></i> Traducir</span></button>
                         </div>
                     </div>
                 </form>
@@ -85,17 +97,14 @@
                         <div class="col-md-6">
                             <div class="p-3 bg-body-tertiary border rounded h-100">
                                 <h6><i class="bi bi-card-text"></i> Transcripción Original</h6>
-                                <p id="audio-original-text" class="mb-0 mt-3 text-secondary"></p>
+                                <div id="audio-original-text" class="mb-0 mt-3 text-secondary"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 bg-primary-subtle border border-primary-subtle rounded h-100">
-                                <h6 class="d-flex justify-content-between align-items-center">
-                                    <span><i class="bi bi-translate"></i> Traducción</span>
-                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'audio-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button>
-                                </h6>
-                                <p id="audio-translated-text" class="my-3 text-body"></p>
-                                <audio id="audio-player" controls class="w-100 d-none shadow-sm rounded"></audio>
+                                <h6 class="d-flex justify-content-between align-items-center"><span><i class="bi bi-translate"></i> Traducción</span><button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'audio-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button></h6>
+                                <div id="audio-translated-text" class="my-3 text-body"></div>
+                                <audio id="audio-player" controls class="w-100 d-none shadow-sm rounded mt-2"></audio>
                             </div>
                         </div>
                     </div>
@@ -108,21 +117,10 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-7">
                             <label class="form-label fw-medium text-muted small">Documento (TXT, PDF, DOCX)</label>
-                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="docs-drop" style="cursor:pointer;">
-                                <span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar documento</span>
-                                <input type="file" id="docs-input" class="d-none" accept=".txt,.pdf,.docx" required>
-                            </div>
+                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="docs-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar documento</span><input type="file" id="docs-input" class="d-none" accept=".txt,.pdf,.docx" required></div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium text-muted small">Idioma destino</label>
-                            <select id="docs-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label d-block">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                                <span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-translate"></i> Traducir</span>
-                            </button>
-                        </div>
+                        <div class="col-md-3"><label class="form-label fw-medium text-muted small">Idioma destino</label><select id="docs-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select></div>
+                        <div class="col-md-2"><label class="form-label d-block">&nbsp;</label><button type="submit" class="btn btn-primary w-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-translate"></i> Traducir</span></button></div>
                     </div>
                 </form>
                 <div id="docs-empty-state" class="text-center py-5 mt-4 border rounded bg-body-tertiary text-muted">
@@ -135,13 +133,8 @@
                             <div class="border rounded p-3 bg-body-tertiary result-box overflow-auto text-secondary" style="white-space: pre-wrap;" id="docs-original-text"></div>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-translate"></i> Traducción</span>
-                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'docs-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button>
-                            </h6>
-                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle result-box overflow-auto text-body" style="white-space: pre-wrap;" id="docs-translated-text"></div>
-                            
-                            <!-- Ajuste responsivo de botones de descarga -->
+                            <h6 class="d-flex justify-content-between align-items-center"><span><i class="bi bi-translate"></i> Traducción</span><button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'docs-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button></h6>
+                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle result-box overflow-auto text-body" id="docs-translated-text"></div>
                             <div class="d-flex flex-column flex-md-row gap-2 mt-3 shadow-sm">
                                 <button id="btn-download-txt" class="btn btn-success fw-semibold w-100"><i class="bi bi-filetype-txt"></i> TXT</button>
                                 <button id="btn-download-docx" class="btn btn-primary fw-semibold w-100"><i class="bi bi-filetype-docx"></i> DOCX</button>
@@ -158,21 +151,10 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-7">
                             <label class="form-label fw-medium text-muted small">Imagen con Texto (JPG, PNG)</label>
-                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="vision-drop" style="cursor:pointer;">
-                                <span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar imagen</span>
-                                <input type="file" id="vision-input" class="d-none" accept="image/jpeg, image/png" required>
-                            </div>
+                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="vision-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar imagen</span><input type="file" id="vision-input" class="d-none" accept="image/jpeg, image/png" required></div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-medium text-muted small">Idioma destino</label>
-                            <select id="vision-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label d-block">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                                <span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-search"></i> Extraer</span>
-                            </button>
-                        </div>
+                        <div class="col-md-3"><label class="form-label fw-medium text-muted small">Idioma destino</label><select id="vision-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select></div>
+                        <div class="col-md-2"><label class="form-label d-block">&nbsp;</label><button type="submit" class="btn btn-primary w-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-search"></i> Extraer</span></button></div>
                     </div>
                 </form>
                 <div id="vision-empty-state" class="text-center py-5 mt-4 border rounded bg-body-tertiary text-muted">
@@ -182,25 +164,23 @@
                     <div class="row g-3">
                         <div class="col-md-6 text-center">
                             <h6><i class="bi bi-eye"></i> Vista Previa</h6>
-                            <div class="p-2 border rounded bg-body-tertiary h-100 d-flex align-items-center justify-content-center">
-                                <img id="vision-preview" src="" alt="Previsualización" class="img-fluid rounded shadow-sm" style="max-height: 300px;">
-                            </div>
+                            <div class="p-2 border rounded bg-body-tertiary h-100 d-flex align-items-center justify-content-center"><img id="vision-preview" src="" alt="Previsualización" class="img-fluid rounded shadow-sm" style="max-height: 300px;"></div>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="d-flex justify-content-between align-items-center">
-                                <span><i class="bi bi-translate"></i> Traducción Extraída</span>
-                                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'vision-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button>
-                            </h6>
-                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle result-box overflow-auto text-body h-100" style="white-space: pre-wrap;" id="vision-translated-text"></div>
+                            <h6 class="d-flex justify-content-between align-items-center"><span><i class="bi bi-translate"></i> Traducción Extraída</span><button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'vision-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button></h6>
+                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle result-box overflow-auto text-body h-100" id="vision-translated-text"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-    <footer class="bg-dark text-white text-center py-3 mt-auto border-top border-secondary">
-        <div class="container small">
+    <footer class="bg-dark text-white text-center py-4 mt-auto border-top border-secondary">
+        <div class="container small d-flex flex-column align-items-center">
             <p class="mb-0 text-white-50">Desarrollado por Luis Enrique Cabrera Garcia | Ingeniería ITICS</p>
+            <div class="mt-2">
+                <a href="https://github.com/Neffex010/1.4-Examen-Tema-1.-Tendencias-actuales-de-la-IA" target="_blank" class="text-white-50 fs-5 text-decoration-none" title="Ver código en GitHub"><i class="bi bi-github"></i> GitHub</a>
+            </div>
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

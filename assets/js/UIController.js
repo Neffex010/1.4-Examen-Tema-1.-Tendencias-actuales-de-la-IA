@@ -6,12 +6,7 @@
         toastEl.setAttribute('role', 'alert');
         toastEl.setAttribute('aria-live', 'assertive');
         toastEl.setAttribute('aria-atomic', 'true');
-        toastEl.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body"><i class="bi ${type === 'danger' ? 'bi-exclamation-triangle' : 'bi-check-circle'} me-2"></i>${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
+        toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${type === 'danger' ? 'bi-exclamation-triangle' : 'bi-check-circle'} me-2"></i>${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
         toastContainer.appendChild(toastEl);
         new bootstrap.Toast(toastEl, { delay: 4000 }).show();
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
@@ -31,7 +26,9 @@
         div.style.maxWidth = '85%';
         div.style.width = 'fit-content';
         let copyBtn = sender === 'bot' ? `<button class="btn btn-sm btn-outline-secondary ms-2 py-0 px-2 float-end" onclick="UIController.copyText(this, \`${text.replace(/`/g, "'").replace(/"/g, "&quot;")}\`)" title="Copiar"><i class="bi bi-clipboard"></i></button>` : '';
-        div.innerHTML = `<strong>${sender === 'user' ? '<i class="bi bi-person"></i> Tú' : '<i class="bi bi-robot"></i> IA'}:</strong><br><span style="white-space: pre-wrap;">${text}</span> ${copyBtn}`;
+        // Renderizar Markdown
+        const formattedText = sender === 'bot' && window.marked ? marked.parse(text) : `<span style="white-space: pre-wrap;">${text}</span>`;
+        div.innerHTML = `<strong>${sender === 'user' ? '<i class="bi bi-person"></i> Tú' : '<i class="bi bi-robot"></i> IA'}:</strong> ${copyBtn}<br><div class="mt-2">${formattedText}</div>`;
         history.appendChild(div);
         history.scrollTo({ top: history.scrollHeight, behavior: 'smooth' });
     }
@@ -49,21 +46,20 @@
             textSpan.innerHTML = btnText;
         }
     }
+    static toggleSkeletons(elementId, show) {
+        const el = document.getElementById(elementId);
+        if(show) {
+            el.innerHTML = '<p class="placeholder-glow"><span class="placeholder col-12 rounded"></span><span class="placeholder col-8 rounded"></span><span class="placeholder col-10 rounded"></span></p>';
+        } else { el.innerHTML = ''; }
+    }
     static async copyText(button, text) {
         try {
             await navigator.clipboard.writeText(text);
             const originalHTML = button.innerHTML;
             button.innerHTML = '<i class="bi bi-check2-all"></i> Copiado';
             button.classList.replace('btn-outline-secondary', 'btn-success');
-            setTimeout(() => {
-                button.innerHTML = originalHTML;
-                button.classList.replace('btn-success', 'btn-outline-secondary');
-            }, 2000);
-        } catch (err) {
-            this.showAlert('Error al copiar', 'danger');
-        }
+            setTimeout(() => { button.innerHTML = originalHTML; button.classList.replace('btn-success', 'btn-outline-secondary'); }, 2000);
+        } catch (err) { this.showAlert('Error al copiar', 'danger'); }
     }
-    static copyFromId(button, elementId) {
-        this.copyText(button, document.getElementById(elementId).textContent);
-    }
+    static copyFromId(button, elementId) { this.copyText(button, document.getElementById(elementId).innerText); }
 }
