@@ -2,29 +2,49 @@
 const api = new APIClient(VERCEL_URL);
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Modo Oscuro
+    document.getElementById('theme-toggle').addEventListener('click', (e) => {
+        const html = document.documentElement;
+        const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-bs-theme', next);
+        e.currentTarget.innerHTML = next === 'dark' ? '<i class="bi bi-sun"></i> Claro' : '<i class="bi bi-moon-stars"></i> Oscuro';
+    });
+
+    // Zonas Drag & Drop
+    document.querySelectorAll('.drop-zone').forEach(zone => {
+        const input = zone.querySelector('input[type="file"]');
+        const textElement = zone.querySelector('.drop-text');
+        const originalText = textElement.innerHTML;
+        zone.addEventListener('click', () => input.click());
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault(); zone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; textElement.innerHTML = `<i class="bi bi-file-earmark-check text-success"></i> ${input.files[0].name}`; }
+        });
+        input.addEventListener('change', () => {
+            textElement.innerHTML = input.files.length ? `<i class="bi bi-file-earmark-check text-success"></i> ${input.files[0].name}` : originalText;
+        });
+    });
+
     // 1. CHAT
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const input = document.getElementById('chat-input');
-        const lang = document.getElementById('chat-target-lang').value;
         const text = input.value.trim();
         if (!text) return UIController.showAlert("El mensaje está vacío.");
         UIController.appendChat(text, 'user');
         input.value = '';
-        UIController.toggleLoading('chat-form', true, 'Enviar');
+        UIController.toggleLoading('chat-form', true, '<i class="bi bi-send"></i> Enviar');
         try {
-            const res = await api.post('/chat.py', { message: text, target_language: lang });
+            const res = await api.post('/chat.py', { message: text, target_language: document.getElementById('chat-target-lang').value });
             UIController.appendChat(res.translated_text, 'bot');
-        } catch (error) {
-            UIController.showAlert(error.message);
-        } finally {
-            UIController.toggleLoading('chat-form', false, 'Enviar');
-        }
+        } catch (error) { UIController.showAlert(error.message); } 
+        finally { UIController.toggleLoading('chat-form', false, '<i class="bi bi-send"></i> Enviar'); }
     });
 
     // 2. AUDIO & GRABACIÓN
-    let mediaRecorder;
-    let audioChunks = [];
+    let mediaRecorder, audioChunks = [];
     const btnRecord = document.getElementById('btn-record');
     const audioInput = document.getElementById('audio-input');
 
@@ -32,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnRecord.classList.contains('recording')) {
             mediaRecorder.stop();
             btnRecord.classList.remove('recording');
-            btnRecord.innerHTML = '🎤 Grabar';
+            btnRecord.innerHTML = '<i class="bi bi-mic"></i> Grabar';
             btnRecord.classList.replace('btn-danger', 'btn-outline-danger');
         } else {
             try {
@@ -43,116 +63,84 @@ document.addEventListener('DOMContentLoaded', () => {
                 mediaRecorder.addEventListener("dataavailable", event => { audioChunks.push(event.data); });
                 mediaRecorder.addEventListener("stop", () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const file = new File([audioBlob], "grabacion.webm", { type: 'audio/webm' });
                     const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
+                    dataTransfer.items.add(new File([audioBlob], "grabacion.webm", { type: 'audio/webm' }));
                     audioInput.files = dataTransfer.files;
-                    UIController.showAlert("Audio grabado. Presiona Traducir.", "success");
+                    document.getElementById('audio-drop').querySelector('.drop-text').innerHTML = `<i class="bi bi-mic-fill text-danger"></i> Grabación lista`;
                     stream.getTracks().forEach(track => track.stop());
                 });
                 btnRecord.classList.add('recording');
-                btnRecord.innerHTML = '⏹️ Detener';
+                btnRecord.innerHTML = '<i class="bi bi-stop-circle"></i> Detener';
                 btnRecord.classList.replace('btn-outline-danger', 'btn-danger');
-            } catch (err) {
-                UIController.showAlert("Error de micrófono. Revisa permisos en tu navegador.");
-                console.error(err);
-            }
+            } catch (err) { UIController.showAlert("Error de micrófono. Revisa permisos."); }
         }
     });
 
     document.getElementById('audio-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const lang = document.getElementById('audio-target-lang').value;
         try {
             const file = audioInput.files[0];
-            if (!file) throw new Error("Debes subir un archivo o grabar un audio.");
+            if (!file) throw new Error("Sube un archivo o graba un audio.");
             FileManager.validate(file, ['webm', 'mp3', 'wav', 'm4a'], 10);
             UIController.toggleLoading('audio-form', true);
-            const base64Audio = await FileManager.toBase64(file);
-            const res = await api.post('/audio.py', { audio: base64Audio, target_language: lang });
+            const res = await api.post('/audio.py', { audio: await FileManager.toBase64(file), target_language: document.getElementById('audio-target-lang').value });
             document.getElementById('audio-original-text').textContent = res.original_text;
             document.getElementById('audio-translated-text').textContent = res.translated_text;
-            const audioPlayer = document.getElementById('audio-player');
-            audioPlayer.src = `data:audio/mp3;base64,${res.translated_audio_b64}`;
-            audioPlayer.classList.remove('d-none');
+            document.getElementById('audio-player').src = `data:audio/mp3;base64,${res.translated_audio_b64}`;
+            document.getElementById('audio-player').classList.remove('d-none');
+            document.getElementById('audio-empty-state').classList.add('d-none');
             document.getElementById('audio-results').classList.remove('d-none');
-        } catch (error) {
-            UIController.showAlert(error.message);
-        } finally {
-            UIController.toggleLoading('audio-form', false);
-        }
+        } catch (error) { UIController.showAlert(error.message); } 
+        finally { UIController.toggleLoading('audio-form', false); }
     });
 
-    // 3. DOCUMENTOS Y DESCARGA
+    // 3. DOCUMENTOS
     document.getElementById('docs-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fileInput = document.getElementById('docs-input');
-        const lang = document.getElementById('docs-target-lang').value;
         try {
-            const file = fileInput.files[0];
+            const file = document.getElementById('docs-input').files[0];
             FileManager.validate(file, ['pdf', 'docx', 'txt'], 5);
             UIController.toggleLoading('docs-form', true);
-            const base64File = await FileManager.toBase64(file);
-            
-            const res = await api.post('/docs.py', { file: base64File, filename: file.name, target_language: lang });
-            window.currentDocsData = res; // Guardar datos para descarga
-            
+            const res = await api.post('/docs.py', { file: await FileManager.toBase64(file), filename: file.name, target_language: document.getElementById('docs-target-lang').value });
+            window.currentDocsData = res;
             document.getElementById('docs-original-text').textContent = res.original_text;
             document.getElementById('docs-translated-text').textContent = res.translated_text;
+            document.getElementById('docs-empty-state').classList.add('d-none');
             document.getElementById('docs-results').classList.remove('d-none');
-        } catch (error) {
-            UIController.showAlert(error.message);
-        } finally {
-            UIController.toggleLoading('docs-form', false);
-        }
+        } catch (error) { UIController.showAlert(error.message); } 
+        finally { UIController.toggleLoading('docs-form', false); }
     });
 
-    // Eventos de descarga de documentos
-    document.getElementById('btn-download-txt').addEventListener('click', () => {
-        const text = document.getElementById('docs-translated-text').textContent;
+    const downloadBlob = (chars, type, name) => {
+        const bytes = new Uint8Array(chars.length);
+        for (let i = 0; i < chars.length; i++) bytes[i] = chars.charCodeAt(i);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+        a.href = URL.createObjectURL(new Blob([bytes], { type }));
+        a.download = name; a.click();
+    };
+    
+    document.getElementById('btn-download-txt').addEventListener('click', () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([document.getElementById('docs-translated-text').textContent], { type: 'text/plain;charset=utf-8' }));
         a.download = 'Traduccion.txt'; a.click();
     });
-    
-    document.getElementById('btn-download-docx').addEventListener('click', () => {
-        if(!window.currentDocsData) return;
-        const chars = atob(window.currentDocsData.docx_b64);
-        const bytes = new Uint8Array(chars.length);
-        for (let i = 0; i < chars.length; i++) bytes[i] = chars.charCodeAt(i);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-        a.download = 'Traduccion.docx'; a.click();
-    });
-    
-    document.getElementById('btn-download-pdf').addEventListener('click', () => {
-        if(!window.currentDocsData) return;
-        const chars = atob(window.currentDocsData.pdf_b64);
-        const bytes = new Uint8Array(chars.length);
-        for (let i = 0; i < chars.length; i++) bytes[i] = chars.charCodeAt(i);
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
-        a.download = 'Traduccion.pdf'; a.click();
-    });
+    document.getElementById('btn-download-docx').addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.docx_b64), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Traduccion.docx'); });
+    document.getElementById('btn-download-pdf').addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.pdf_b64), 'application/pdf', 'Traduccion.pdf'); });
 
     // 4. IMÁGENES
     document.getElementById('vision-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fileInput = document.getElementById('vision-input');
-        const lang = document.getElementById('vision-target-lang').value;
         try {
-            const file = fileInput.files[0];
+            const file = document.getElementById('vision-input').files[0];
             FileManager.validate(file, ['jpg', 'jpeg', 'png'], 4);
             UIController.toggleLoading('vision-form', true);
             const base64Img = await FileManager.toBase64(file);
             document.getElementById('vision-preview').src = `data:${file.type};base64,${base64Img}`;
-            const res = await api.post('/vision.py', { image: base64Img, target_language: lang });
+            const res = await api.post('/vision.py', { image: base64Img, target_language: document.getElementById('vision-target-lang').value });
             document.getElementById('vision-translated-text').textContent = res.translation;
+            document.getElementById('vision-empty-state').classList.add('d-none');
             document.getElementById('vision-results').classList.remove('d-none');
-        } catch (error) {
-            UIController.showAlert(error.message);
-        } finally {
-            UIController.toggleLoading('vision-form', false);
-        }
+        } catch (error) { UIController.showAlert(error.message); } 
+        finally { UIController.toggleLoading('vision-form', false); }
     });
 });

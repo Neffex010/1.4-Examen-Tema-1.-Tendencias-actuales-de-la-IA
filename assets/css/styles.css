@@ -1,28 +1,40 @@
-/* Altura mínima para los contenedores de resultados de traducción */
-#docs-original-text, 
-#docs-translated-text, 
-#vision-translated-text {
-    min-height: 150px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-}
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-/* Estilos específicos para el historial del chat */
-#chat-history {
-    scroll-behavior: smooth;
-    background-color: #f8f9fa;
-}
-
-/* Transición suave para los botones al cargar */
-.btn {
-    transition: all 0.3s ease;
-}
-
-/* Ajuste para el footer en pantallas muy grandes */
 body {
+    font-family: 'Inter', sans-serif;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
-main {
-    flex: 1 0 auto;
+
+/* Micro-interacciones de botones */
+.btn {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Zonas de Drag & Drop */
+.drop-zone {
+    border: 2px dashed var(--bs-border-color);
+    transition: all 0.2s ease;
+}
+.drop-zone:hover, .drop-zone.dragover {
+    background-color: var(--bs-tertiary-bg);
+    border-color: var(--bs-primary);
+}
+
+/* Ajustes visuales de resultados */
+.result-box {
+    min-height: 150px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+#chat-history {
+    scroll-behavior: smooth;
 }
