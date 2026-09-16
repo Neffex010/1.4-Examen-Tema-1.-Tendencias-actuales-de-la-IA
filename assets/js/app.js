@@ -27,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Limpiar Chat
+    document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
+        document.getElementById('chat-history').innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>';
+        UIController.showAlert('Historial de chat borrado', 'success');
+    });
+
     // 1. CHAT
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -119,13 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
         a.download = name; a.click();
     };
     
-    document.getElementById('btn-download-txt').addEventListener('click', () => {
+    document.getElementById('btn-download-txt')?.addEventListener('click', () => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([document.getElementById('docs-translated-text').textContent], { type: 'text/plain;charset=utf-8' }));
         a.download = 'Traduccion.txt'; a.click();
     });
-    document.getElementById('btn-download-docx').addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.docx_b64), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Traduccion.docx'); });
-    document.getElementById('btn-download-pdf').addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.pdf_b64), 'application/pdf', 'Traduccion.pdf'); });
+    document.getElementById('btn-download-docx')?.addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.docx_b64), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Traduccion.docx'); });
+    document.getElementById('btn-download-pdf')?.addEventListener('click', () => { if(window.currentDocsData) downloadBlob(atob(window.currentDocsData.pdf_b64), 'application/pdf', 'Traduccion.pdf'); });
 
     // 4. IMÁGENES
     document.getElementById('vision-form').addEventListener('submit', async (e) => {
@@ -143,9 +149,4 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('vision-form', false); }
     });
-
-    // Limpiar Chat
-    document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
-        document.getElementById('chat-history').innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>';
-        UIController.showAlert('Historial de chat borrado', 'success');
-    });
+});

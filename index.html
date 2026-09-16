@@ -31,7 +31,9 @@
             
             <!-- Chat -->
             <div class="tab-pane fade show active" id="chat-pane" role="tabpanel">
-                <div class="d-flex justify-content-end mb-2"><button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3"></i> Limpiar Chat</button></div>
+                <div class="d-flex justify-content-end mb-2">
+                    <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3"></i> Limpiar Chat</button>
+                </div>
                 <div id="chat-history" class="border rounded p-3 mb-3 bg-body-tertiary overflow-auto" style="height: 350px;">
                     <div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>
                 </div>
@@ -138,7 +140,9 @@
                                 <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 bg-body" onclick="UIController.copyFromId(this, 'docs-translated-text')"><i class="bi bi-clipboard"></i> Copiar</button>
                             </h6>
                             <div class="border rounded p-3 bg-primary-subtle border-primary-subtle result-box overflow-auto text-body" style="white-space: pre-wrap;" id="docs-translated-text"></div>
-                            <div class="d-flex flex-column flex-md-row gap-2 mt-3">
+                            
+                            <!-- Ajuste responsivo de botones de descarga -->
+                            <div class="d-flex flex-column flex-md-row gap-2 mt-3 shadow-sm">
                                 <button id="btn-download-txt" class="btn btn-success fw-semibold w-100"><i class="bi bi-filetype-txt"></i> TXT</button>
                                 <button id="btn-download-docx" class="btn btn-primary fw-semibold w-100"><i class="bi bi-filetype-docx"></i> DOCX</button>
                                 <button id="btn-download-pdf" class="btn btn-danger fw-semibold w-100"><i class="bi bi-filetype-pdf"></i> PDF</button>
