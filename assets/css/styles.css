@@ -38,3 +38,25 @@ body {
 #chat-history {
     scroll-behavior: smooth;
 }
+/* Adaptación móvil para las pestañas (Scroll horizontal táctil) */
+.nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.nav-tabs::-webkit-scrollbar {
+    display: none; /* Ocultar barra de scroll en Chrome/Safari */
+}
+.nav-tabs {
+    -ms-overflow-style: none; /* Ocultar en IE/Edge */
+    scrollbar-width: none; /* Ocultar en Firefox */
+}
+
+/* Asegurar que las notificaciones no las tape el teclado móvil */
+.toast-container {
+    bottom: 20px !important;
+    z-index: 9999 !important;
+}

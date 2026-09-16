@@ -143,4 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('vision-form', false); }
     });
-});
+
+    // Limpiar Chat
+    document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
+        document.getElementById('chat-history').innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>';
+        UIController.showAlert('Historial de chat borrado', 'success');
+    });
