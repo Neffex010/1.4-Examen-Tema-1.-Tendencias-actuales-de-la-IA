@@ -87,6 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = audioInput.files[0];
             if (!file) throw new Error("Sube un archivo o graba un audio.");
             FileManager.validate(file, ['webm', 'mp3', 'wav', 'm4a'], 10);
+            
+            // Ocultar botones y reproductor antes de procesar
+            document.getElementById('audio-copy-btn').classList.add('d-none');
+            document.getElementById('audio-player').classList.add('d-none');
+            
             document.getElementById('audio-empty-state').classList.add('d-none');
             document.getElementById('audio-results').classList.remove('d-none');
             UIController.toggleLoading('audio-form', true);
@@ -97,7 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('audio-original-text').innerHTML = res.original_text;
             document.getElementById('audio-translated-text').innerHTML = res.translated_text;
             document.getElementById('audio-player').src = `data:audio/mp3;base64,${res.translated_audio_b64}`;
+            
+            // Mostrar botones y reproductor al finalizar
             document.getElementById('audio-player').classList.remove('d-none');
+            document.getElementById('audio-copy-btn').classList.remove('d-none');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('audio-form', false); }
     });
@@ -108,6 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const file = document.getElementById('docs-input').files[0];
             FileManager.validate(file, ['pdf', 'docx', 'txt'], 5);
+            
+            // Ocultar botones de acción antes de procesar
+            document.getElementById('docs-copy-btn').classList.add('d-none');
+            document.getElementById('docs-download-group').classList.add('d-none');
+            
             document.getElementById('docs-empty-state').classList.add('d-none');
             document.getElementById('docs-results').classList.remove('d-none');
             UIController.toggleLoading('docs-form', true);
@@ -117,6 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentDocsData = res;
             document.getElementById('docs-original-text').innerHTML = res.original_text;
             document.getElementById('docs-translated-text').innerHTML = window.marked ? marked.parse(res.translated_text) : res.translated_text;
+            
+            // Mostrar botones al finalizar
+            document.getElementById('docs-copy-btn').classList.remove('d-none');
+            document.getElementById('docs-download-group').classList.remove('d-none');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('docs-form', false); }
     });
@@ -135,6 +152,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const file = document.getElementById('vision-input').files[0];
             FileManager.validate(file, ['jpg', 'jpeg', 'png'], 4);
+            
+            // Ocultar boton de accion antes de procesar
+            document.getElementById('vision-copy-btn').classList.add('d-none');
+            
             document.getElementById('vision-empty-state').classList.add('d-none');
             document.getElementById('vision-results').classList.remove('d-none');
             UIController.toggleLoading('vision-form', true);
@@ -144,6 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('vision-preview').src = `data:${file.type};base64,${base64Img}`;
             const res = await api.post('/vision.py', { image: base64Img, target_language: document.getElementById('vision-target-lang').value });
             document.getElementById('vision-translated-text').innerHTML = window.marked ? marked.parse(res.translation) : res.translation;
+            
+            // Mostrar boton al finalizar
+            document.getElementById('vision-copy-btn').classList.remove('d-none');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('vision-form', false); }
     });
