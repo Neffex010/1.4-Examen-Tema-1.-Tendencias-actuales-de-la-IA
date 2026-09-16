@@ -65,11 +65,17 @@ class handler(BaseTranslatorHandler):
                 doc_out.save(docx_path)
                 with open(docx_path, "rb") as f: docx_b64 = base64.b64encode(f.read()).decode('utf-8')
 
-                # Generar PDF
+                # Generar PDF (Sanitizando Unicode para FPDF)
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Helvetica", size=11)
-                pdf.multi_cell(0, 6, text=translated_text)
+                
+                # Reemplazo manual de caracteres tipográficos conflictivos
+                clean_pdf_text = translated_text.replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"').replace("–", "-").replace("—", "-")
+                # Forzar codificación compatible con fuentes estándar (soporta acentos y ñ)
+                clean_pdf_text = clean_pdf_text.encode('latin-1', 'replace').decode('latin-1')
+                
+                pdf.multi_cell(0, 6, text=clean_pdf_text)
                 pdf_path = f"{tmp_path}_out.pdf"
                 pdf.output(pdf_path)
                 with open(pdf_path, "rb") as f: pdf_b64 = base64.b64encode(f.read()).decode('utf-8')

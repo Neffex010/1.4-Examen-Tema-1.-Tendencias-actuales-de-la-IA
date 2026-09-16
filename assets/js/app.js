@@ -2,7 +2,6 @@
 const api = new APIClient(VERCEL_URL);
 
 document.addEventListener('DOMContentLoaded', () => {
-
     // 1. CHAT
     document.getElementById('chat-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -94,7 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
             FileManager.validate(file, ['pdf', 'docx', 'txt'], 5);
             UIController.toggleLoading('docs-form', true);
             const base64File = await FileManager.toBase64(file);
+            
             const res = await api.post('/docs.py', { file: base64File, filename: file.name, target_language: lang });
+            window.currentDocsData = res; // Guardar datos para descarga
+            
             document.getElementById('docs-original-text').textContent = res.original_text;
             document.getElementById('docs-translated-text').textContent = res.translated_text;
             document.getElementById('docs-results').classList.remove('d-none');
@@ -105,18 +107,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('btn-download-doc').addEventListener('click', () => {
-        const textToDownload = document.getElementById('docs-translated-text').textContent;
-        if (!textToDownload) return;
-        const blob = new Blob([textToDownload], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
+    // Eventos de descarga de documentos
+    document.getElementById('btn-download-txt').addEventListener('click', () => {
+        const text = document.getElementById('docs-translated-text').textContent;
         const a = document.createElement('a');
-        a.href = url;
-        a.download = "Documento_Traducido.txt";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+        a.download = 'Traduccion.txt'; a.click();
+    });
+    
+    document.getElementById('btn-download-docx').addEventListener('click', () => {
+        if(!window.currentDocsData) return;
+        const chars = atob(window.currentDocsData.docx_b64);
+        const bytes = new Uint8Array(chars.length);
+        for (let i = 0; i < chars.length; i++) bytes[i] = chars.charCodeAt(i);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+        a.download = 'Traduccion.docx'; a.click();
+    });
+    
+    document.getElementById('btn-download-pdf').addEventListener('click', () => {
+        if(!window.currentDocsData) return;
+        const chars = atob(window.currentDocsData.pdf_b64);
+        const bytes = new Uint8Array(chars.length);
+        for (let i = 0; i < chars.length; i++) bytes[i] = chars.charCodeAt(i);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+        a.download = 'Traduccion.pdf'; a.click();
     });
 
     // 4. IMÁGENES
