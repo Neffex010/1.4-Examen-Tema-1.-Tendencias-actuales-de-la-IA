@@ -13,7 +13,7 @@
         <p class="small text-muted mt-1 mb-0">Español ↔ Inglés</p>
     </header>
     <main class="container my-5 flex-grow-1">
-        <div id="global-alert" class="alert d-none" role="alert"></div>
+        
         <ul class="nav nav-tabs shadow-sm bg-white pt-2 px-2 rounded-top" id="translatorTabs" role="tablist">
             <li class="nav-item"><button class="nav-link active fw-semibold" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat-pane" type="button" role="tab">Chat</button></li>
             <li class="nav-item"><button class="nav-link fw-semibold" id="audio-tab" data-bs-toggle="tab" data-bs-target="#audio-pane" type="button" role="tab">Audio</button></li>
@@ -83,8 +83,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 bg-primary-subtle border border-primary-subtle rounded">
-                                <h6>Traducción</h6>
-                                <p id="audio-translated-text" class="mb-3"></p>
+                                <h6>Traducción <button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" onclick="UIController.copyFromId(this, 'audio-translated-text')">📋 Copiar</button></h6>
+<p id="audio-translated-text" class="mb-3"></p>
                                 <audio id="audio-player" controls class="w-100 d-none"></audio>
                             </div>
                         </div>
@@ -123,8 +123,8 @@
                             <div class="border rounded p-3 bg-light overflow-auto" style="max-height: 400px; white-space: pre-wrap;" id="docs-original-text"></div>
                         </div>
                         <div class="col-md-6">
-                            <h6>Traducción</h6>
-                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle overflow-auto" style="max-height: 400px; white-space: pre-wrap;" id="docs-translated-text"></div>
+                            <h6>Traducción <button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" onclick="UIController.copyFromId(this, 'docs-translated-text')">📋 Copiar</button></h6>
+<div class="border rounded p-3 bg-primary-subtle border-primary-subtle overflow-auto" style="max-height: 400px; white-space: pre-wrap;" id="docs-translated-text"></div>
                             
                             <div class="btn-group w-100 mt-3">
                                 <button id="btn-download-txt" class="btn btn-outline-success">Descargar TXT</button>
@@ -168,8 +168,8 @@
                             <img id="vision-preview" src="" alt="Previsualización" class="img-fluid border rounded shadow-sm" style="max-height: 300px;">
                         </div>
                         <div class="col-md-6">
-                            <h6>Traducción (Texto Extraído)</h6>
-                            <div class="border rounded p-3 bg-primary-subtle border-primary-subtle h-100 overflow-auto" style="min-height: 150px; white-space: pre-wrap;" id="vision-translated-text"></div>
+                            <h6>Traducción (Texto Extraído) <button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0 px-1" onclick="UIController.copyFromId(this, 'vision-translated-text')">📋 Copiar</button></h6>
+<div class="border rounded p-3 bg-primary-subtle border-primary-subtle h-100 overflow-auto" style="min-height: 150px; white-space: pre-wrap;" id="vision-translated-text"></div>
                         </div>
                     </div>
                 </div>
