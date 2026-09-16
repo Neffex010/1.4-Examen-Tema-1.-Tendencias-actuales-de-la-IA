@@ -1,4 +1,3 @@
-
 # Traductor Inteligente Multimodal 🌐
 
 Plataforma Web responsiva de Inteligencia Artificial capaz de traducir información entre español e inglés mediante texto conversacional (Chat), audio, documentos (PDF, DOCX, TXT) e imágenes.
@@ -60,5 +59,5 @@ Aplicación SPA (Single Page Application) donde el Frontend gestiona la UI y el 
 
 ## 11. URLs Públicas
 
-- **Aplicación (GitHub Pages):** `[Inserta tu URL de GitHub Pages aquí]`
-- **Backend (Vercel):** `[Inserta tu URL de Vercel aquí]`
+- **Aplicación (GitHub Pages):** [neffex010.github.io/1.4-Examen-Tema-1.-Tendencias-actuales-de-la-IA](https://neffex010.github.io/1.4-Examen-Tema-1.-Tendencias-actuales-de-la-IA/)
+-
