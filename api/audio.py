@@ -31,9 +31,10 @@ class AudioTranslator:
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1", 
                     file=audio_file,
-                    prompt="Contexto técnico: ITICS, IA, Vercel, Python, PowerShell, API, Backend, Frontend. Conversación formal o académica."
                 )
             original_text = transcript.text
+            if not original_text or not original_text.strip():
+                raise ValueError("El audio no contiene voz reconocible. Intenta con otro archivo.")
             prompt = f"Traduce al {target_lang}. Responde EXCLUSIVAMENTE con la traducción:\n\n{original_text}"
             translation_response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -55,5 +56,7 @@ class handler(BaseTranslatorHandler):
             voice = payload.get("voice", "alloy")
             result = AudioTranslator().process_audio(audio_bytes, payload.get("target_language"), voice)
             self._send_json_response(200, result)
+        except ValueError as e:
+            self._send_json_response(400, {"error": str(e)})
         except Exception as e:
             self._send_json_response(500, {"error": str(e)})

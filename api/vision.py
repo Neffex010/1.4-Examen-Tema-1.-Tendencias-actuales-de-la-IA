@@ -54,7 +54,10 @@ class VisionTranslator:
             ],
             max_tokens=1500
         )
-        return response.choices[0].message.content
+        resultado = response.choices[0].message.content
+        if resultado and 'texto legible' in resultado.lower() and ('no se detect' in resultado.lower() or 'no hay texto' in resultado.lower()):
+            raise ValueError("No se detecto texto legible en la imagen. Intenta con otra imagen de mayor calidad.")
+        return resultado
 
 class handler(BaseTranslatorHandler):
     """Punto de entrada REST para Vercel Serverless Functions."""
@@ -79,5 +82,7 @@ class handler(BaseTranslatorHandler):
             
             self._send_json_response(200, {"translation": result})
             
+        except ValueError as e:
+            self._send_json_response(422, {"error": str(e)})
         except Exception as e:
             self._send_json_response(500, {"error": f"Error interno del servidor: {str(e)}"})
