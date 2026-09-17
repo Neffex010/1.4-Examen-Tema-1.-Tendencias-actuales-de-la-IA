@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Chat: Limpiar y Exportar
     document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
+        if (!confirm('¿Seguro que quieres borrar el historial del chat?')) return;
         document.getElementById('chat-history').innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>';
         chatContext = []; // Reiniciar el contexto en memoria
         UIController.showAlert('Historial de chat borrado', 'success');
@@ -144,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mostrar botones y reproductor al finalizar
             document.getElementById('audio-player').classList.remove('d-none');
             document.getElementById('audio-copy-btn').classList.remove('d-none');
+            UIController.showAlert('Audio procesado correctamente', 'success');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('audio-form', false); }
     });
@@ -174,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mostrar botones al finalizar
             document.getElementById('docs-copy-btn').classList.remove('d-none');
             document.getElementById('docs-download-group').classList.remove('d-none');
+            UIController.showAlert('Documento traducido', 'success');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('docs-form', false); }
     });
@@ -209,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Mostrar boton al finalizar
             document.getElementById('vision-copy-btn').classList.remove('d-none');
+            UIController.showAlert('Imagen procesada', 'success');
         } catch (error) { UIController.showAlert(error.message); } 
         finally { UIController.toggleLoading('vision-form', false); }
     });

@@ -6,7 +6,21 @@
         toastEl.setAttribute('role', 'alert');
         toastEl.setAttribute('aria-live', 'assertive');
         toastEl.setAttribute('aria-atomic', 'true');
-        toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${type === 'danger' ? 'bi-exclamation-triangle' : 'bi-check-circle'} me-2"></i>${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        const _icons = {
+
+            success: 'bi-check-circle-fill',
+
+            warning: 'bi-exclamation-triangle-fill',
+
+            danger:  'bi-x-octagon-fill',
+
+            info:    'bi-info-circle-fill'
+
+        };
+
+        const _icon = _icons[type] || 'bi-info-circle-fill';
+
+        toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${_icon} me-2"></i>${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
         toastContainer.appendChild(toastEl);
         new bootstrap.Toast(toastEl, { delay: 4000 }).show();
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
