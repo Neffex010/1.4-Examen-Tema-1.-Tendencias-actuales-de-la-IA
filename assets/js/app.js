@@ -20,11 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('change', () => { textElement.innerHTML = input.files.length ? `<i class="bi bi-file-earmark-check text-success"></i> ${input.files[0].name}` : originalText; });
     });
 
+    // Estado global para el contexto del chat
+    let chatContext = [];
+
     // Chat: Limpiar y Exportar
     document.getElementById('btn-clear-chat')?.addEventListener('click', () => {
         document.getElementById('chat-history').innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>';
+        chatContext = []; // Reiniciar el contexto en memoria
         UIController.showAlert('Historial de chat borrado', 'success');
     });
+
     document.getElementById('btn-export-chat')?.addEventListener('click', () => {
         const lines = Array.from(document.getElementById('chat-history').children).map(div => div.innerText).filter(text => text && !text.includes('Inicia una conversación'));
         if (lines.length === 0) return UIController.showAlert('El chat está vacío', 'warning');
@@ -49,14 +54,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
         if (!text) return UIController.showAlert("El mensaje está vacío.");
+        
         UIController.appendChat(text, 'user');
         input.value = '';
         UIController.toggleLoading('chat-form', true, '<i class="bi bi-send"></i> Enviar');
+        
         try {
-            const res = await api.post('/chat.py', { message: text, target_language: document.getElementById('chat-target-lang').value });
+            const res = await api.post('/chat.py', { 
+                message: text, 
+                target_language: document.getElementById('chat-target-lang').value,
+                history: chatContext
+            });
             UIController.appendChat(res.translated_text, 'bot');
-        } catch (error) { UIController.showAlert(error.message); } 
-        finally { UIController.toggleLoading('chat-form', false, '<i class="bi bi-send"></i> Enviar'); }
+            
+            chatContext.push({ role: 'user', content: text });
+            chatContext.push({ role: 'assistant', content: res.translated_text });
+            if (chatContext.length > 6) chatContext = chatContext.slice(-6);
+            
+        } catch (error) { 
+            UIController.showAlert(error.message); 
+        } finally { 
+            UIController.toggleLoading('chat-form', false, '<i class="bi bi-send"></i> Enviar'); 
+        }
     });
 
     // Audio & Grabación

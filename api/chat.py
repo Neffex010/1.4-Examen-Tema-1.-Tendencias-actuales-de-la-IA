@@ -4,8 +4,6 @@ from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
 
 class BaseTranslatorHandler(BaseHTTPRequestHandler):
-    """Clase base para manejar CORS y respuestas JSON (POO)."""
-    
     def _set_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', 'https://neffex010.github.io')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -24,34 +22,35 @@ class BaseTranslatorHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 class ChatTranslator:
-    """Encapsula la lÃ³gica para la traducciÃ³n de mensajes de texto bidireccionales."""
-    
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.model = "gpt-4o-mini"
 
-    def translate_message(self, message, target_lang):
+    def translate_message(self, message, target_lang, history):
+        messages_payload = [
+            {"role": "system", "content": "Eres un traductor estricto. Entregas traducciones sin juicios de valor, advertencias ni introducciones."}
+        ]
+        
+        for msg in history:
+            messages_payload.append({"role": msg.get("role"), "content": msg.get("content")})
+
         prompt = (
             f"Traduce el siguiente texto al {target_lang}. "
-            "Responde ÃšNICAMENTE con la traducciÃ³n directa, fiel y literal del material original. "
+            "Responde ÚNICAMENTE con la traducción directa, fiel y literal del material original. "
             "Conserva el tono exacto y la jerga sin suavizar ni censurar el contenido. "
             f"Texto a traducir:\n\n{message}"
         )
+        messages_payload.append({"role": "user", "content": prompt})
         
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[
-                {"role": "system", "content": "Eres un traductor estricto. Entregas traducciones sin juicios de valor, advertencias ni introducciones."},
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages_payload,
             max_tokens=1000,
-            temperature=0.3 # Temperatura baja para mayor precisiÃ³n en la traducciÃ³n
+            temperature=0.3
         )
         return response.choices[0].message.content
 
 class handler(BaseTranslatorHandler):
-    """Punto de entrada REST para el chat en Vercel."""
-    
     def do_POST(self):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
@@ -62,17 +61,14 @@ class handler(BaseTranslatorHandler):
             payload = json.loads(self.rfile.read(content_length))
             message = payload.get("message", "").strip()
             target_lang = payload.get("target_language")
+            chat_history = payload.get("history", [])
             
-            if not message:
-                self._send_json_response(400, {"error": "Entrada vacÃ­a o mensaje sin contenido."})
-                return
-                
-            if not target_lang:
-                self._send_json_response(400, {"error": "Se requiere especificar el idioma de destino (target_language)."})
+            if not message or not target_lang:
+                self._send_json_response(400, {"error": "Faltan parámetros requeridos."})
                 return
 
             translator = ChatTranslator()
-            translated_text = translator.translate_message(message, target_lang)
+            translated_text = translator.translate_message(message, target_lang, chat_history)
             
             self._send_json_response(200, {
                 "original_text": message,
