@@ -100,6 +100,7 @@ class handler(BaseTranslatorHandler):
                         self.set_text_color(120, 120, 120)
                         self.cell(0, 8, 'Traduccion - Traductor Inteligente IA', 0, 1, 'R')
                         self.ln(2)
+                        self.set_x(self.l_margin)
                         self.set_text_color(30, 30, 30)
                         self.set_font('Helvetica', size=11)
                     def footer(self):
