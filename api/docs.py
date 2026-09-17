@@ -6,7 +6,7 @@ from fpdf import FPDF
 
 class BaseTranslatorHandler(BaseHTTPRequestHandler):
     def _set_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Origin', 'https://neffex010.github.io')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     def _send_json_response(self, status_code, data):

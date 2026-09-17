@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
@@ -7,7 +7,7 @@ class BaseTranslatorHandler(BaseHTTPRequestHandler):
     """Clase base para manejar CORS y respuestas JSON (POO)."""
     
     def _set_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Origin', 'https://neffex010.github.io')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
@@ -24,7 +24,7 @@ class BaseTranslatorHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 class ChatTranslator:
-    """Encapsula la lógica para la traducción de mensajes de texto bidireccionales."""
+    """Encapsula la lÃ³gica para la traducciÃ³n de mensajes de texto bidireccionales."""
     
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -33,7 +33,7 @@ class ChatTranslator:
     def translate_message(self, message, target_lang):
         prompt = (
             f"Traduce el siguiente texto al {target_lang}. "
-            "Responde ÚNICAMENTE con la traducción directa, fiel y literal del material original. "
+            "Responde ÃšNICAMENTE con la traducciÃ³n directa, fiel y literal del material original. "
             "Conserva el tono exacto y la jerga sin suavizar ni censurar el contenido. "
             f"Texto a traducir:\n\n{message}"
         )
@@ -45,7 +45,7 @@ class ChatTranslator:
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
-            temperature=0.3 # Temperatura baja para mayor precisión en la traducción
+            temperature=0.3 # Temperatura baja para mayor precisiÃ³n en la traducciÃ³n
         )
         return response.choices[0].message.content
 
@@ -64,7 +64,7 @@ class handler(BaseTranslatorHandler):
             target_lang = payload.get("target_language")
             
             if not message:
-                self._send_json_response(400, {"error": "Entrada vacía o mensaje sin contenido."})
+                self._send_json_response(400, {"error": "Entrada vacÃ­a o mensaje sin contenido."})
                 return
                 
             if not target_lang:

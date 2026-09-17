@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
@@ -7,7 +7,7 @@ class BaseTranslatorHandler(BaseHTTPRequestHandler):
     """Clase base para manejar CORS y respuestas JSON estructuradas (POO)."""
     
     def _set_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Origin', 'https://neffex010.github.io')
         self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
@@ -19,13 +19,13 @@ class BaseTranslatorHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode('utf-8'))
 
     def do_OPTIONS(self):
-        """Resuelve el preflight CORS automático de los navegadores."""
+        """Resuelve el preflight CORS automÃ¡tico de los navegadores."""
         self.send_response(200)
         self._set_cors_headers()
         self.end_headers()
 
 class VisionTranslator:
-    """Maneja la lógica de extracción y traducción de texto en imágenes vía OpenAI."""
+    """Maneja la lÃ³gica de extracciÃ³n y traducciÃ³n de texto en imÃ¡genes vÃ­a OpenAI."""
     
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -33,9 +33,9 @@ class VisionTranslator:
 
     def translate_image(self, base64_image, target_lang):
         prompt = (
-            f"Extrae el texto de esta imagen y tradúcelo al {target_lang}. "
+            f"Extrae el texto de esta imagen y tradÃºcelo al {target_lang}. "
             "Devuelve EXCLUSIVAMENTE el texto traducido. Si no hay texto legible, "
-            "devuelve exactamente: 'No se detectó texto legible en la imagen.'"
+            "devuelve exactamente: 'No se detectÃ³ texto legible en la imagen.'"
         )
         
         response = self.client.chat.completions.create(
@@ -63,7 +63,7 @@ class handler(BaseTranslatorHandler):
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length == 0:
-                self._send_json_response(400, {"error": "Cuerpo de la petición vacío."})
+                self._send_json_response(400, {"error": "Cuerpo de la peticiÃ³n vacÃ­o."})
                 return
                 
             payload = json.loads(self.rfile.read(content_length))
@@ -71,7 +71,7 @@ class handler(BaseTranslatorHandler):
             target_language = payload.get("target_language")
             
             if not base64_img or not target_language:
-                self._send_json_response(400, {"error": "Faltan parámetros requeridos (image, target_language)."})
+                self._send_json_response(400, {"error": "Faltan parÃ¡metros requeridos (image, target_language)."})
                 return
 
             translator = VisionTranslator()
