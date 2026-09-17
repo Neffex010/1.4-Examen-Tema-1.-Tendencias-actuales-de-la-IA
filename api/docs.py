@@ -73,9 +73,14 @@ class handler(BaseTranslatorHandler):
                     section.left_margin = _Cm(2.5)
                     section.right_margin = _Cm(2.5)
 
+                import re as _re
+                def _clean_xml(t):
+                    # Elimina caracteres de control no permitidos por XML 1.0
+                    return _re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', str(t))
+
                 doc_out.add_heading('Traduccion', level=0)
                 for _line in translated_text.split('\n'):
-                    _s = _line.strip()
+                    _s = _clean_xml(_line).strip()
                     if not _s:
                         continue
                     if _s.startswith('### '):
