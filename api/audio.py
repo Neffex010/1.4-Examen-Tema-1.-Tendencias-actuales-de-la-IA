@@ -30,8 +30,7 @@ class AudioTranslator:
             with open(tmp_path, "rb") as audio_file:
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1", 
-                    file=audio_file,
-                    prompt="Contexto técnico: ITICS, IA, Vercel, Python, PowerShell, API, Backend, Frontend. Conversación formal o académica."
+                    file=audio_file
                 )
             original_text = transcript.text
             prompt = f"Traduce al {target_lang}. Responde EXCLUSIVAMENTE con la traducción:\n\n{original_text}"

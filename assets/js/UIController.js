@@ -19,16 +19,31 @@
         document.body.appendChild(container);
         return container;
     }
-    static appendChat(text, sender) {
+    static appendChat(originalText, translatedText, targetLang) {
         const history = document.getElementById('chat-history');
         const div = document.createElement('div');
-        div.className = `p-3 mb-3 rounded shadow-sm ${sender === 'user' ? 'bg-primary text-white ms-auto text-end' : 'bg-body-secondary border'}`;
+        div.className = 'p-3 mb-3 rounded shadow-sm bg-primary text-white ms-auto';
         div.style.maxWidth = '85%';
         div.style.width = 'fit-content';
-        let copyBtn = sender === 'bot' ? `<button class="btn btn-sm btn-outline-secondary ms-2 py-0 px-2 float-end" onclick="UIController.copyText(this, \`${text.replace(/`/g, "'").replace(/"/g, "&quot;")}\`)" title="Copiar"><i class="bi bi-clipboard"></i></button>` : '';
-        // Renderizar Markdown
-        const formattedText = sender === 'bot' && window.marked ? marked.parse(text) : `<span style="white-space: pre-wrap;">${text}</span>`;
-        div.innerHTML = `<strong>${sender === 'user' ? '<i class="bi bi-person"></i> Tú' : '<i class="bi bi-robot"></i> IA'}:</strong> ${copyBtn}<br><div class="mt-2">${formattedText}</div>`;
+
+        const srcLabel = targetLang === 'en' ? 'ES (original)' : 'EN (original)';
+        const dstLabel = targetLang === 'en' ? 'EN (traducción)' : 'ES (traducción)';
+
+        const safeOriginal = originalText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeTranslated = translatedText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const copySafe = safeTranslated.replace(/`/g, "'").replace(/"/g, '&quot;');
+
+        div.innerHTML =
+            '<div class="d-flex justify-content-between align-items-center mb-2">' +
+                '<strong><i class="bi bi-person"></i> Tú</strong>' +
+                '<button class="btn btn-sm btn-outline-light py-0 px-2" title="Copiar" onclick="UIController.copyText(this, `' + copySafe + '`)"><i class="bi bi-clipboard"></i></button>' +
+            '</div>' +
+            '<div class="small text-white-50 mb-1">' + srcLabel + '</div>' +
+            '<div class="mb-2" style="white-space: pre-wrap;">' + safeOriginal + '</div>' +
+            '<hr class="border-light opacity-25 my-2">' +
+            '<div class="small text-white-50 mb-1">' + dstLabel + '</div>' +
+            '<div style="white-space: pre-wrap;">' + safeTranslated + '</div>';
+
         history.appendChild(div);
         history.scrollTo({ top: history.scrollHeight, behavior: 'smooth' });
     }
