@@ -1,6 +1,23 @@
 ﻿const VERCEL_URL = "https://1-4-examen-tema-1-tendencias-actual-one.vercel.app/api";
 const api = new APIClient(VERCEL_URL);
 
+function updateLangLabels(targetLang) {
+    const isEn = targetLang === 'en';
+    const src = isEn ? 'ES' : 'EN';
+    const dst = isEn ? 'EN' : 'ES';
+    const map = {
+        'audio-original-label': 'Transcripción Original (' + src + ')',
+        'audio-target-label':   'Traducción (' + dst + ')',
+        'docs-original-label':  'Original (' + src + ')',
+        'docs-target-label':    'Traducción (' + dst + ')',
+        'vision-target-label':  'Traducción Extraída (' + dst + ')'
+    };
+    for (const id in map) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = map[id];
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('theme-toggle').addEventListener('click', (e) => {
         const html = document.documentElement;
@@ -116,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
             UIController.toggleLoading('audio-form', true);
             UIController.toggleSkeletons('audio-original-text', true); UIController.toggleSkeletons('audio-translated-text', true);
             
+            updateLangLabels(document.getElementById('audio-target-lang').value);
+            
             const res = await api.post('/audio.py', { audio: await FileManager.toBase64(file), target_language: document.getElementById('audio-target-lang').value, voice: document.getElementById('audio-voice').value });
             
             document.getElementById('audio-original-text').innerHTML = res.original_text;
@@ -144,6 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('docs-results').classList.remove('d-none');
             UIController.toggleLoading('docs-form', true);
             UIController.toggleSkeletons('docs-original-text', true); UIController.toggleSkeletons('docs-translated-text', true);
+            
+            updateLangLabels(document.getElementById('docs-target-lang').value);
             
             const res = await api.post('/docs.py', { file: await FileManager.toBase64(file), filename: file.name, target_language: document.getElementById('docs-target-lang').value });
             window.currentDocsData = res;
@@ -182,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const base64Img = await FileManager.toBase64(file);
             document.getElementById('vision-preview').src = `data:${file.type};base64,${base64Img}`;
+            updateLangLabels(document.getElementById('vision-target-lang').value);
             const res = await api.post('/vision.py', { image: base64Img, target_language: document.getElementById('vision-target-lang').value });
             document.getElementById('vision-translated-text').innerHTML = window.marked ? marked.parse(res.translation) : res.translation;
             
