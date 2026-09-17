@@ -32,8 +32,7 @@ class ChatTranslator:
         ]
         
         for msg in history:
-            if msg.get("role") in ("user", "assistant") and msg.get("content"):
-                messages_payload.append({"role": msg["role"], "content": msg["content"]})
+            messages_payload.append({"role": msg.get("role"), "content": msg.get("content")})
 
         prompt = (
             f"Traduce el siguiente texto al {target_lang}. "
