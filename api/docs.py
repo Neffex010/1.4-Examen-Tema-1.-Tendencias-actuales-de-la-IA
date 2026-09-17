@@ -58,27 +58,108 @@ class handler(BaseTranslatorHandler):
                 )
                 translated_text = trans_res.choices[0].message.content
 
-                # Generar DOCX
+                # Generar DOCX con estilos
                 doc_out = docx.Document()
-                doc_out.add_paragraph(translated_text)
+                try:
+                    doc_out.core_properties.title = f"Traduccion - {payload.get('filename', 'documento')}"
+                    doc_out.core_properties.author = "Traductor Inteligente IA"
+                except Exception:
+                    pass
+
+                from docx.shared import Cm as _Cm
+                for section in doc_out.sections:
+                    section.top_margin = _Cm(2.5)
+                    section.bottom_margin = _Cm(2.5)
+                    section.left_margin = _Cm(2.5)
+                    section.right_margin = _Cm(2.5)
+
+                doc_out.add_heading('Traduccion', level=0)
+                for _line in translated_text.split('\n'):
+                    _s = _line.strip()
+                    if not _s:
+                        continue
+                    if _s.startswith('### '):
+                        doc_out.add_heading(_s[4:], level=3)
+                    elif _s.startswith('## '):
+                        doc_out.add_heading(_s[3:], level=2)
+                    elif _s.startswith('# '):
+                        doc_out.add_heading(_s[2:], level=1)
+                    elif _s.startswith('- ') or _s.startswith('* '):
+                        doc_out.add_paragraph(_s[2:], style='List Bullet')
+                    else:
+                        doc_out.add_paragraph(_s)
+
                 docx_path = f"{tmp_path}_out.docx"
                 doc_out.save(docx_path)
                 with open(docx_path, "rb") as f: docx_b64 = base64.b64encode(f.read()).decode('utf-8')
 
-                # Generar PDF (Sanitizando Unicode para FPDF)
-                pdf = FPDF()
+                # Generar PDF con estilos
+                class _PDF(FPDF):
+                    def header(self):
+                        self.set_font('Helvetica', 'B', 9)
+                        self.set_text_color(120, 120, 120)
+                        self.cell(0, 8, 'Traduccion - Traductor Inteligente IA', 0, 1, 'R')
+                        self.ln(2)
+                        self.set_text_color(30, 30, 30)
+                        self.set_font('Helvetica', size=11)
+                    def footer(self):
+                        self.set_y(-15)
+                        self.set_font('Helvetica', 'I', 8)
+                        self.set_text_color(150, 150, 150)
+                        self.cell(0, 10, f'Pagina {self.page_no()}/{{nb}}', 0, 0, 'C')
+
+                def _sanitize(t):
+                    t = (t.replace('\u2018', "'").replace('\u2019', "'")
+                          .replace('\u201c', '"').replace('\u201d', '"')
+                          .replace('\u2013', '-').replace('\u2014', '-')
+                          .replace('\u2026', '...'))
+                    return t.encode('latin-1', 'replace').decode('latin-1')
+
+                pdf = _PDF()
+                pdf.alias_nb_pages()
+                pdf.set_auto_page_break(auto=True, margin=20)
+                pdf.set_margins(20, 20, 20)
                 pdf.add_page()
+                pdf.set_text_color(30, 30, 30)
+
+                pdf.set_font("Helvetica", "B", 18)
+                pdf.set_text_color(20, 60, 120)
+                pdf.cell(0, 12, _sanitize('Traduccion'), 0, 1)
+                pdf.ln(4)
+                pdf.set_text_color(30, 30, 30)
                 pdf.set_font("Helvetica", size=11)
-                
-                # Reemplazo manual de caracteres tipográficos conflictivos
-                clean_pdf_text = translated_text.replace("‘", "'").replace("’", "'").replace("“", '"').replace("”", '"').replace("–", "-").replace("—", "-")
-                # Forzar codificación compatible con fuentes estándar (soporta acentos y ñ)
-                clean_pdf_text = clean_pdf_text.encode('latin-1', 'replace').decode('latin-1')
-                
-                pdf.multi_cell(0, 6, text=clean_pdf_text)
+
+                for _line in translated_text.split('\n'):
+                    _s = _line.strip()
+                    if not _s:
+                        pdf.ln(3)
+                    elif _s.startswith('### '):
+                        pdf.set_font("Helvetica", "B", 13)
+                        pdf.ln(2)
+                        pdf.multi_cell(0, 7, text=_sanitize(_s[4:]))
+                        pdf.set_font("Helvetica", size=11)
+                        pdf.ln(1)
+                    elif _s.startswith('## '):
+                        pdf.set_font("Helvetica", "B", 15)
+                        pdf.ln(3)
+                        pdf.multi_cell(0, 8, text=_sanitize(_s[3:]))
+                        pdf.set_font("Helvetica", size=11)
+                        pdf.ln(2)
+                    elif _s.startswith('# '):
+                        pdf.set_font("Helvetica", "B", 16)
+                        pdf.ln(4)
+                        pdf.multi_cell(0, 9, text=_sanitize(_s[2:]))
+                        pdf.set_font("Helvetica", size=11)
+                        pdf.ln(3)
+                    elif _s.startswith('- ') or _s.startswith('* '):
+                        pdf.multi_cell(0, 6, text=_sanitize('  - ' + _s[2:]))
+                    else:
+                        pdf.multi_cell(0, 6, text=_sanitize(_s))
+
                 pdf_path = f"{tmp_path}_out.pdf"
                 pdf.output(pdf_path)
                 with open(pdf_path, "rb") as f: pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
+
 
                 self._send_json_response(200, {
                     "original_text": text,
