@@ -110,10 +110,12 @@ class handler(BaseTranslatorHandler):
                         self.cell(0, 10, f'Pagina {self.page_no()}/{{nb}}', 0, 0, 'C')
 
                 def _sanitize(t):
+                    t = str(t)
                     t = (t.replace('\u2018', "'").replace('\u2019', "'")
                           .replace('\u201c', '"').replace('\u201d', '"')
                           .replace('\u2013', '-').replace('\u2014', '-')
-                          .replace('\u2026', '...'))
+                          .replace('\u2026', '...')
+                          .replace('\t', '    '))
                     return t.encode('latin-1', 'replace').decode('latin-1')
 
                 pdf = _PDF()
@@ -125,38 +127,42 @@ class handler(BaseTranslatorHandler):
 
                 pdf.set_font("Helvetica", "B", 18)
                 pdf.set_text_color(20, 60, 120)
+                pdf.set_x(pdf.l_margin)
                 pdf.cell(0, 12, _sanitize('Traduccion'), 0, 1)
                 pdf.ln(4)
                 pdf.set_text_color(30, 30, 30)
                 pdf.set_font("Helvetica", size=11)
 
+                epw = pdf.epw
+
                 for _line in translated_text.split('\n'):
                     _s = _line.strip()
+                    pdf.set_x(pdf.l_margin)
                     if not _s:
                         pdf.ln(3)
-                    elif _s.startswith('### '):
+                        continue
+                    if _s.startswith('### '):
                         pdf.set_font("Helvetica", "B", 13)
                         pdf.ln(2)
-                        pdf.multi_cell(0, 7, text=_sanitize(_s[4:]))
+                        pdf.multi_cell(epw, 7, text=_sanitize(_s[4:]))
                         pdf.set_font("Helvetica", size=11)
                         pdf.ln(1)
                     elif _s.startswith('## '):
                         pdf.set_font("Helvetica", "B", 15)
                         pdf.ln(3)
-                        pdf.multi_cell(0, 8, text=_sanitize(_s[3:]))
+                        pdf.multi_cell(epw, 8, text=_sanitize(_s[3:]))
                         pdf.set_font("Helvetica", size=11)
                         pdf.ln(2)
                     elif _s.startswith('# '):
                         pdf.set_font("Helvetica", "B", 16)
                         pdf.ln(4)
-                        pdf.multi_cell(0, 9, text=_sanitize(_s[2:]))
+                        pdf.multi_cell(epw, 9, text=_sanitize(_s[2:]))
                         pdf.set_font("Helvetica", size=11)
                         pdf.ln(3)
                     elif _s.startswith('- ') or _s.startswith('* '):
-                        pdf.multi_cell(0, 6, text=_sanitize('  - ' + _s[2:]))
+                        pdf.multi_cell(epw, 6, text=_sanitize('  - ' + _s[2:]))
                     else:
-                        pdf.multi_cell(0, 6, text=_sanitize(_s))
-
+                        pdf.multi_cell(epw, 6, text=_sanitize(_s))
                 pdf_path = f"{tmp_path}_out.pdf"
                 pdf.output(pdf_path)
                 with open(pdf_path, "rb") as f: pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
