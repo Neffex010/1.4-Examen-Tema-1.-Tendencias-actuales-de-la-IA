@@ -9,10 +9,17 @@ Reduce las barreras del idioma en organizaciones binacionales (México-Estados U
 ## 2. Funcionalidades implementadas
 
 - **Traducción Bidireccional:** Español ↔ Inglés.
-- **Chat:** Conversación continua conservando el historial.
-- **Audio:** Transcripción y síntesis de voz (Text-to-Speech) de la traducción.
-- **Documentos:** Extracción y traducción de `.pdf`, `.docx` y `.txt`.
-- **Imágenes:** Extracción de texto (OCR) y traducción de `.jpg` y `.png`.
+- **Chat:** Conversación continua conservando el historial, persistido en el navegador (se restaura al recargar), con opción de **regenerar** un mensaje, **dictado por voz** y exportación del chat en Markdown.
+- **Audio:** Transcripción y síntesis de voz (Text-to-Speech) de la traducción, con grabación de micrófono limitada a 60 s y detección automática de idioma.
+- **Documentos:** Extracción y traducción de `.pdf`, `.docx` y `.txt`, con descargas nombradas según el archivo original.
+- **Imágenes:** Extracción de texto (OCR) y traducción de `.jpg` y `.png`, mostrando además el texto original extraído. Las imágenes se optimizan en el cliente antes de enviarse.
+
+### UX adicional
+- **Progreso en vivo:** Líneas de avance con etapas y cronómetro (ej. "Transcribiendo… 4s") en audio, documentos e imágenes.
+- **Cancelación:** Botón para cancelar una petición en curso sin recargar la página.
+- **Retroalimentación:** Skeleton loaders, indicador de escritura del chat y toasts con el tiempo de cada traducción.
+- **Persistencia:** Tema, idiomas y voz recordados entre sesiones (localStorage).
+- **Accesibilidad:** Indicador de conexión online/offline, `aria-live` para lectores de pantalla, avisos de tamaño antes de subir archivos y soporte de `prefers-reduced-motion`.
 
 ## 3. Tecnologías utilizadas
 

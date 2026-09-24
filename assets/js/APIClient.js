@@ -4,8 +4,18 @@ class APIClient {
         this.timeoutMs = timeoutMs;
     }
 
-    async post(endpoint, payload) {
+    async post(endpoint, payload, options = {}) {
+        const userSignal = options.signal || null;
         const controller = new AbortController();
+
+        const abortFromUser = () => controller.abort();
+        if (userSignal) {
+            if (userSignal.aborted) {
+                abortFromUser();
+            } else {
+                userSignal.addEventListener('abort', abortFromUser, { once: true });
+            }
+        }
         const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
         try {
@@ -37,7 +47,12 @@ class APIClient {
             }
             return data;
         } catch (error) {
-            if (error.name === 'AbortError') {
+            if (userSignal && userSignal.aborted) {
+                const cancelled = new Error('Procesamiento cancelado.');
+                cancelled.name = 'CancelError';
+                throw cancelled;
+            }
+            if (error.name === 'AbortError' || error.name === 'TimeoutError') {
                 throw new Error('La solicitud tardó demasiado. Intenta con un archivo más pequeño.');
             }
             if (error instanceof TypeError) {
@@ -48,6 +63,9 @@ class APIClient {
             throw error;
         } finally {
             clearTimeout(timer);
+            if (userSignal) {
+                userSignal.removeEventListener('abort', abortFromUser);
+            }
         }
     }
 }

@@ -31,7 +31,10 @@
                 <h1 class="h4 mb-0"><i class="bi bi-globe-americas text-primary"></i> Traductor Inteligente IA</h1>
                 <p class="small text-secondary mt-1 mb-0">Arquitectura Serverless y Modelos Multimodales</p>
             </div>
-            <button id="theme-toggle" class="btn btn-outline-light btn-sm"><i class="bi bi-moon-stars"></i> Oscuro</button>
+            <div class="d-flex align-items-center gap-2">
+                <span id="conn-status" class="badge bg-danger d-none" role="status" title="Sin conexión a internet"><i class="bi bi-wifi-off"></i> Sin conexión</span>
+                <button id="theme-toggle" class="btn btn-outline-light btn-sm"><i class="bi bi-moon-stars"></i> Oscuro</button>
+            </div>
         </div>
     </header>
     
@@ -56,8 +59,14 @@
                     <button id="btn-export-chat" class="btn btn-sm btn-outline-primary me-2" aria-label="Exportar chat"><i class="bi bi-download"></i> Exportar</button>
                     <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary" aria-label="Limpiar chat"><i class="bi bi-trash3"></i> Limpiar</button>
                 </div>
-                <div id="chat-history" class="border rounded p-3 mb-3 bg-body-tertiary overflow-auto" style="height: 350px;">
+                <div id="chat-history" class="border rounded p-3 mb-3 bg-body-tertiary overflow-auto" style="height: 350px;" role="log" aria-live="polite" aria-relevant="additions">
                     <div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>
+                </div>
+                <div id="chat-suggestions" class="mb-2 d-flex flex-wrap gap-2" aria-label="Ejemplos rápidos">
+                    <span class="small text-muted align-self-center">Pruébalo:</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill chip-btn" data-text="¿Cómo puedo solicitar un permiso de trabajo en Estados Unidos?">Permiso de trabajo (→ EN)</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill chip-btn" data-text="The meeting was postponed until Friday at 10 AM.">Postergar reunión (→ ES)</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill chip-btn" data-text="Necesito traducir este documento para el cruce fronterizo.">Cruce fronterizo (→ EN)</button>
                 </div>
                 <form id="chat-form">
                     <div class="row g-2">
@@ -83,11 +92,11 @@
                             <label class="form-label fw-medium text-muted small">Archivo de Audio</label>
                             <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="audio-drop" style="cursor:pointer;">
                                 <span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Arrastrar audio</span>
-                                <input type="file" id="audio-input" class="d-none" accept="audio/*">
+                                <input type="file" id="audio-input" class="d-none" accept="audio/*" data-max-mb="10">
                             </div>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label d-block">&nbsp;</label>
+                            <label class="form-label d-block small text-danger fw-semibold d-none text-nowrap" id="record-timer" aria-live="polite">Grabando 0:00</label>
                             <button type="button" id="btn-record" class="btn btn-outline-danger w-100 fw-semibold" aria-label="Grabar audio"><i class="bi bi-mic"></i> Grabar</button>
                         </div>
                         <div class="col-md-2">
@@ -106,6 +115,11 @@
                         </div>
                     </div>
                 </form>
+                <div id="audio-progress" class="d-none mt-3 small text-muted d-flex align-items-center gap-2" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span class="audio-progress-text progress-text">Transcribiendo</span>
+                    <button type="button" id="btn-cancel-audio" class="btn btn-sm btn-outline-danger ms-auto">Cancelar</button>
+                </div>
                 <div id="audio-empty-state" class="text-center py-5 mt-4 border rounded bg-body-tertiary text-muted">
                     <i class="bi bi-soundwave display-1 opacity-25"></i><p class="mt-3">Sube un audio o graba tu voz para procesar</p>
                 </div>
@@ -115,6 +129,7 @@
                             <div class="p-3 bg-body-tertiary border rounded h-100">
                                 <h6><i class="bi bi-card-text"></i> <span id="audio-original-label">Transcripción Original (ES)</span></h6>
                                 <div id="audio-original-text" class="mb-0 mt-3 text-secondary"></div>
+                                <span id="audio-detected-lang" class="badge bg-light text-body border mt-3 d-none"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -137,12 +152,17 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-7">
                             <label class="form-label fw-medium text-muted small">Documento (TXT, PDF, DOCX)</label>
-                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="docs-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar documento</span><input type="file" id="docs-input" class="d-none" accept=".txt,.pdf,.docx" required></div>
+                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="docs-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar documento</span><input type="file" id="docs-input" class="d-none" accept=".txt,.pdf,.docx" data-max-mb="5" required></div>
                         </div>
                         <div class="col-md-3"><label class="form-label fw-medium text-muted small">Idioma destino</label><select id="docs-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select></div>
                         <div class="col-md-2"><label class="form-label d-block">&nbsp;</label><button type="submit" class="btn btn-primary w-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-translate"></i> Traducir</span></button></div>
                     </div>
                 </form>
+                <div id="docs-progress" class="d-none mt-3 small text-muted d-flex align-items-center gap-2" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span class="docs-progress-text progress-text">Extrayendo texto</span>
+                    <button type="button" id="btn-cancel-docs" class="btn btn-sm btn-outline-danger ms-auto">Cancelar</button>
+                </div>
                 <div id="docs-empty-state" class="text-center py-5 mt-4 border rounded bg-body-tertiary text-muted">
                     <i class="bi bi-file-earmark-arrow-up display-1 opacity-25"></i><p class="mt-3">Sube un documento para extraer y traducir</p>
                 </div>
@@ -177,20 +197,31 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-7">
                             <label class="form-label fw-medium text-muted small">Imagen con Texto (JPG, PNG)</label>
-                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="vision-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar imagen</span><input type="file" id="vision-input" class="d-none" accept="image/jpeg, image/png" required></div>
+                            <div class="drop-zone p-2 text-center rounded bg-body-tertiary" id="vision-drop" style="cursor:pointer;"><span class="drop-text fw-medium"><i class="bi bi-cloud-arrow-up"></i> Seleccionar o arrastrar imagen</span><input type="file" id="vision-input" class="d-none" accept="image/jpeg, image/png" data-max-mb="4" required></div>
                         </div>
                         <div class="col-md-3"><label class="form-label fw-medium text-muted small">Idioma destino</label><select id="vision-target-lang" class="form-select"><option value="en">Inglés</option><option value="es">Español</option></select></div>
                         <div class="col-md-2"><label class="form-label d-block">&nbsp;</label><button type="submit" class="btn btn-primary w-100 fw-semibold"><span class="spinner-border spinner-border-sm d-none me-2"></span><span class="btn-text"><i class="bi bi-search"></i> Extraer</span></button></div>
                     </div>
                 </form>
+                <div id="vision-progress" class="d-none mt-3 small text-muted d-flex align-items-center gap-2" role="status" aria-live="polite">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span class="vision-progress-text progress-text">Extrayendo texto de la imagen</span>
+                    <button type="button" id="btn-cancel-vision" class="btn btn-sm btn-outline-danger ms-auto">Cancelar</button>
+                </div>
                 <div id="vision-empty-state" class="text-center py-5 mt-4 border rounded bg-body-tertiary text-muted">
                     <i class="bi bi-images display-1 opacity-25"></i><p class="mt-3">Sube una imagen para realizar OCR y traducir</p>
                 </div>
                 <div id="vision-results" class="mt-4 d-none">
                     <div class="row g-3">
-                        <div class="col-md-6 text-center">
-                            <h6><i class="bi bi-eye"></i> Vista Previa</h6>
-                            <div class="p-2 border rounded bg-body-tertiary h-100 d-flex align-items-center justify-content-center"><img id="vision-preview" src="" alt="Previsualización" class="img-fluid rounded shadow-sm" style="max-height: 300px;"></div>
+                        <div class="col-md-6">
+                            <div class="text-center mb-3">
+                                <h6><i class="bi bi-eye"></i> Vista Previa</h6>
+                                <div class="p-2 border rounded bg-body-tertiary d-flex align-items-center justify-content-center"><img id="vision-preview" src="" alt="Previsualización" class="img-fluid rounded shadow-sm" style="max-height: 300px;"></div>
+                            </div>
+                            <div class="border rounded p-3 bg-body-tertiary d-none" id="vision-original-box">
+                                <h6><i class="bi bi-card-text"></i> <span id="vision-original-label">Texto Original Extraído (OCR)</span></h6>
+                                <div class="result-box overflow-auto text-secondary" style="white-space: pre-wrap; max-height: 200px;" id="vision-original-text"></div>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <h6 class="d-flex justify-content-between align-items-center">

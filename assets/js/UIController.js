@@ -15,7 +15,7 @@
         const icon = icons[type] || 'bi-info-circle-fill';
         toastEl.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${icon} me-2"></i>${this.escapeHtml(message)}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>`;
         toastContainer.appendChild(toastEl);
-        new bootstrap.Toast(toastEl, { delay: 4000 }).show();
+        new bootstrap.Toast(toastEl, { delay: type === 'success' ? 5000 : 4500 }).show();
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
 
@@ -43,7 +43,8 @@
         return this.escapeHtml(text);
     }
 
-    static appendChat(text, sender) {
+    static appendChat(text, sender, options = {}) {
+        const { latest = false } = options;
         const history = document.getElementById('chat-history');
         const div = document.createElement('div');
         div.className = `p-3 mb-3 rounded shadow-sm ${sender === 'user' ? 'bg-primary text-white ms-auto text-end' : 'bg-body-secondary border'}`;
@@ -55,10 +56,64 @@
         const copyBtn = sender === 'bot'
             ? `<button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0 px-2 float-end" data-copy="${this.escapeAttr(text)}" title="Copiar" aria-label="Copiar traducción"><i class="bi bi-clipboard"></i></button>`
             : '';
+        const retryBtn = sender === 'bot' && latest
+            ? `<button type="button" class="btn btn-sm btn-outline-secondary ms-1 py-0 px-2 float-end" data-retry title="Regenerar traducción" aria-label="Regenerar traducción"><i class="bi bi-arrow-clockwise"></i></button>`
+            : '';
 
-        div.innerHTML = `<strong>${label}:</strong> ${copyBtn}<br><div class="mt-2">${body}</div>`;
+        div.innerHTML = `<strong>${label}:</strong> ${copyBtn}${retryBtn}<br><div class="mt-2">${body}</div>`;
+        div.dataset.role = sender;
         history.appendChild(div);
         history.scrollTo({ top: history.scrollHeight, behavior: 'smooth' });
+        return div;
+    }
+
+    static showTyping() {
+        const history = document.getElementById('chat-history');
+        if (!history || document.getElementById('typing-indicator')) return;
+        const div = document.createElement('div');
+        div.id = 'typing-indicator';
+        div.className = 'p-3 mb-3 rounded shadow-sm bg-body-secondary border';
+        div.style.maxWidth = '85%';
+        div.style.width = 'fit-content';
+        div.innerHTML = '<strong><i class="bi bi-robot"></i> IA:</strong><br><div class="mt-2 d-flex align-items-center gap-1 typing-dots" aria-hidden="true"><span></span><span></span><span></span><span class="visually-hidden">Traduciendo…</span></div>';
+        history.appendChild(div);
+        history.scrollTo({ top: history.scrollHeight, behavior: 'smooth' });
+    }
+
+    static hideTyping() {
+        document.getElementById('typing-indicator')?.remove();
+    }
+
+    /**
+     * Muestra una línea de progreso con etapas y cronómetro.
+     * El texto se escribe en el hijo [class*="-progress-text"] o en el contenedor.
+     * Devuelve una función stop() para ocultarlo y limpiar los temporizadores.
+     */
+    static startProgress(statusId, steps = []) {
+        const line = document.getElementById(statusId);
+        if (!line) return () => {};
+        const textEl = line.querySelector('.progress-text') || line;
+        let index = 0;
+        const start = Date.now();
+        line.classList.remove('d-none');
+
+        const render = () => {
+            const step = steps.length ? steps[index] : 'Procesando';
+            textEl.textContent = `${step}… (${Math.round((Date.now() - start) / 1000)}s)`;
+        };
+        const spin = setInterval(() => {
+            if (steps.length) index = (index + 1) % steps.length;
+            render();
+        }, 4000);
+        const tick = setInterval(render, 1000);
+        render();
+
+        return () => {
+            clearInterval(spin);
+            clearInterval(tick);
+            textEl.textContent = '';
+            line.classList.add('d-none');
+        };
     }
 
     static toggleLoading(formId, isLoading, btnText = '<i class="bi bi-translate"></i> Traducir') {
@@ -83,6 +138,15 @@
         } else {
             el.innerHTML = '';
         }
+    }
+
+    static langName(code) {
+        const map = {
+            es: 'Español', en: 'Inglés', fr: 'Francés', pt: 'Portugués',
+            de: 'Alemán', it: 'Italiano', nl: 'Neerlandés', zh: 'Chino',
+            ja: 'Japonés', ko: 'Coreano', ar: 'Árabe', ru: 'Ruso'
+        };
+        return map[code] || String(code || '').toUpperCase();
     }
 
     static async copyText(button, text) {

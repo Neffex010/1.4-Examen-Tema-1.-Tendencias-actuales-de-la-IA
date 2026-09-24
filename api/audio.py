@@ -27,9 +27,11 @@ class AudioTranslator:
                 transcript = self.client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_file,
+                    response_format="verbose_json",
                 )
 
             original_text = (transcript.text or "").strip()
+            detected_language = getattr(transcript, "language", None)
             if not original_text:
                 raise ValueError("El audio no contiene voz reconocible. Intenta con otro archivo.")
 
@@ -45,6 +47,7 @@ class AudioTranslator:
 
             return {
                 "original_text": original_text,
+                "detected_language": detected_language,
                 "translated_text": translated_text,
                 "translated_audio_b64": tts_b64,
             }
