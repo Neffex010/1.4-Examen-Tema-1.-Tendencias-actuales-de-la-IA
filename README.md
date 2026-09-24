@@ -31,6 +31,48 @@ Reduce las barreras del idioma en organizaciones binacionales (México-Estados U
 
 Aplicación SPA (Single Page Application) donde el Frontend gestiona la UI y el estado, comunicándose vía peticiones REST (POST) con el Backend en Vercel. El Backend actúa como middleware seguro para consumir la API de OpenAI y devolver el JSON procesado.
 
+### 4.1 Flujo de trabajo y manejo de errores
+
+Cada solicitud recorre una tubería de validación en cascada: cada capa valida sus propias entradas y solo lo correcto llega a OpenAI. Los errores de una capa nunca se filtran como fallos internos; se convierten en mensajes claros con su código HTTP.
+
+```mermaid
+flowchart LR
+    U[Usuario<br/>(capa 8)]-->|enviar archivo / texto| F
+
+    subgraph Frontend
+        F[FileManager.validate<br/>formato + tamaño] -->|error| E1[Toast: límite / formato]
+        F -->|ok| POST[POST /api/xxx.py<br/>AbortController + timeout 90s]
+        POST -->|cancela usuario| EC[Toast: Operación cancelada]
+        POST -->|error red / 429 / 413 / 502 / 504| E2[Toast: mensaje específico]
+    end
+
+    POST -.->|JSON| S
+
+    subgraph Backend Vercel
+        S[CORS + rate limit 20 req/min] -->|403 / 429| E3[Respuesta JSON de error]
+        S --> S1[Lectura segura body<br/>Content-Length <= 15MB] -->|400 / 413| E3
+        S1 --> S2[Validación del dominio<br/>idioma / voz / base64 / tamaño archivo] -->|400 / 413| E3
+        S2 --> S3[Servicio *Translator<br/>OpenAI]
+        S3 -->|caso esperable<br/>imagen sin texto / audio mudo| S4[ValueError 422]
+        S3 -->|fallo desconocido| S5[500 genérico + log]
+        S4 & S5 --> E3
+        S3 -->|ok| R[JSON: original_text + translation]
+    end
+
+    R -->|respuesta| M[Render seguro<br/>escape + DOMPurify]
+    M --> OK[Toast: tiempo de proceso<br/>+ persistencia chat / prefs]
+
+    E1 & E2 & EC --> OKS[La UI vuelve al<br/>estado vacío si aplica]
+    E3 -.->|fetch no-ok| POST
+```
+
+Puntos clave del flujo:
+
+- **`finally` garantiza limpieza:** los temporizadores del progreso, el `AbortController` y los botones siempre se restablecen, aunque falle o se cancele la petición; la UI nunca queda bloqueada.
+- **Errores de capa 8** (usuario) se detectan antes de salir a la red (`validate`), o se traducen en el backend a `ValueError` → 422 con mensaje claro.
+- **Errores de red/infra** (429, 413, 502, 504, timeout) se clasifican en `APIClient` con mensajes específicos.
+- **Fallos internos** (OpenAI, excepciones inesperadas) → 500 con texto genérico; el detalle solo aparece en los logs del servidor, nunca al cliente.
+
 ## 5. Uso de la API de OpenAI
 
 - `gpt-4o-mini`: Para traducción de texto (chat y documentos) debido a su rapidez y eficiencia en procesamiento de lenguaje natural.
