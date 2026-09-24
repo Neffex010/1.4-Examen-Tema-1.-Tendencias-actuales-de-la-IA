@@ -6,10 +6,6 @@
     { "src": "api/docs.py", "use": "@vercel/python" },
     { "src": "api/vision.py", "use": "@vercel/python" }
   ],
-  "functions": {
-    "api/audio.py": { "maxDuration": 60 },
-    "api/docs.py": { "maxDuration": 60 }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
