@@ -1,8 +1,10 @@
 # Entorno virtual y dependencias
 venv/
 env/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Variables de entorno (CRÍTICO PARA EL EXAMEN)
 .env
