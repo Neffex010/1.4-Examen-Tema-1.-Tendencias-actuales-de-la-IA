@@ -3,14 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Traductor Inteligente Multimodal</title>
+    <title>Traductor Inteligente Multimodal | Español ↔ Inglés con IA</title>
+    <meta name="description" content="Plataforma web de IA para traducir mensajes, audios, documentos e imágenes entre español e inglés.">
+    <meta name="theme-color" content="#212529">
+    <meta property="og:title" content="Traductor Inteligente Multimodal">
+    <meta property="og:description" content="Traduce chat, audio, documentos e imágenes con modelos de IA multimodales.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neffex010.github.io/1.4-Examen-Tema-1.-Tendencias-actuales-de-la-IA/">
+    <meta property="og:locale" content="es_MX">
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/styles.css">
-    <!-- Dependencia Ligera para Markdown -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Dependencias de Markdown (versiones fijas) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
 </head>
 <body class="min-vh-100 bg-body-tertiary">
     <header class="bg-dark text-white shadow-sm pt-4 pb-3">
@@ -41,8 +53,8 @@
             <!-- Chat -->
             <div class="tab-pane fade show active" id="chat-pane" role="tabpanel">
                 <div class="d-flex justify-content-end mb-2">
-                    <button id="btn-export-chat" class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-download"></i> Exportar</button>
-                    <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash3"></i> Limpiar</button>
+                    <button id="btn-export-chat" class="btn btn-sm btn-outline-primary me-2" aria-label="Exportar chat"><i class="bi bi-download"></i> Exportar</button>
+                    <button id="btn-clear-chat" class="btn btn-sm btn-outline-secondary" aria-label="Limpiar chat"><i class="bi bi-trash3"></i> Limpiar</button>
                 </div>
                 <div id="chat-history" class="border rounded p-3 mb-3 bg-body-tertiary overflow-auto" style="height: 350px;">
                     <div class="text-center text-muted mt-5"><i class="bi bi-robot display-4 opacity-50"></i><p class="mt-2">Inicia una conversación para traducir</p></div>
@@ -52,7 +64,7 @@
                         <div class="col-md-8">
                             <div class="input-group h-100">
                                 <textarea id="chat-input" class="form-control" rows="2" placeholder="Escribe o dicta un mensaje..." required></textarea>
-                                <button type="button" class="btn btn-outline-secondary" id="btn-dictate" title="Dictar por voz"><i class="bi bi-mic"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-dictate" title="Dictar por voz" aria-label="Dictar por voz"><i class="bi bi-mic"></i></button>
                             </div>
                         </div>
                         <div class="col-md-2"><select id="chat-target-lang" class="form-select h-100"><option value="en">A Inglés</option><option value="es">A Español</option></select></div>
@@ -76,7 +88,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label d-block">&nbsp;</label>
-                            <button type="button" id="btn-record" class="btn btn-outline-danger w-100 fw-semibold"><i class="bi bi-mic"></i> Grabar</button>
+                            <button type="button" id="btn-record" class="btn btn-outline-danger w-100 fw-semibold" aria-label="Grabar audio"><i class="bi bi-mic"></i> Grabar</button>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label fw-medium text-muted small">Idioma destino</label>

@@ -1,7 +1,5 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-body {
-    font-family: 'Inter', sans-serif;
+﻿body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     display: flex;
     flex-direction: column;
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -27,6 +25,10 @@ body {
 .drop-zone:hover, .drop-zone.dragover {
     background-color: var(--bs-tertiary-bg);
     border-color: var(--bs-primary);
+}
+.drop-zone:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
 }
 
 /* Ajustes visuales de resultados */
