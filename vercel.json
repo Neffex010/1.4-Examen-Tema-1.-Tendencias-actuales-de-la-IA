@@ -1,19 +1,18 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/**/*.py",
-      "use": "@vercel/python"
-    }
+    { "src": "api/chat.py", "use": "@vercel/python" },
+    { "src": "api/audio.py", "use": "@vercel/python" },
+    { "src": "api/docs.py", "use": "@vercel/python" },
+    { "src": "api/vision.py", "use": "@vercel/python" }
   ],
+  "functions": {
+    "api/audio.py": { "maxDuration": 60 },
+    "api/docs.py": { "maxDuration": 60 }
+  },
   "routes": [
     {
       "src": "/api/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      },
       "dest": "/api/$1"
     }
   ]

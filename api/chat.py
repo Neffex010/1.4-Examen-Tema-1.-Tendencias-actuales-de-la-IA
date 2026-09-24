@@ -1,25 +1,15 @@
 ﻿import os
-import json
-from http.server import BaseHTTPRequestHandler
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from openai import OpenAI
 
-class BaseTranslatorHandler(BaseHTTPRequestHandler):
-    def _set_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', 'https://neffex010.github.io')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+from _helpers import BaseTranslatorHandler, valid_language
 
-    def _send_json_response(self, status_code, data):
-        self.send_response(status_code)
-        self.send_header('Content-type', 'application/json')
-        self._set_cors_headers()
-        self.end_headers()
-        self.wfile.write(json.dumps(data).encode('utf-8'))
+MAX_MESSAGE_CHARS = 8000
+MAX_HISTORY_MESSAGES = 12
 
-    def do_OPTIONS(self):
-        self.send_response(200)
-        self._set_cors_headers()
-        self.end_headers()
 
 class ChatTranslator:
     def __init__(self):
@@ -28,53 +18,64 @@ class ChatTranslator:
 
     def translate_message(self, message, target_lang, history):
         messages_payload = [
-            {"role": "system", "content": "Eres un traductor estricto. Entregas traducciones sin juicios de valor, advertencias ni introducciones."}
+            {
+                "role": "system",
+                "content": "Eres un traductor estricto. Entregas traducciones sin juicios de valor, "
+                           "advertencias ni introducciones.",
+            }
         ]
-        
-        for msg in history:
-            if msg.get("role") in ("user", "assistant") and msg.get("content"):
-                messages_payload.append({"role": msg["role"], "content": msg["content"]})
+
+        for msg in history[-MAX_HISTORY_MESSAGES:]:
+            role = msg.get("role")
+            content = (msg.get("content") or "").strip()
+            if role in ("user", "assistant") and content:
+                messages_payload.append({"role": role, "content": content[:MAX_MESSAGE_CHARS]})
 
         prompt = (
             f"Traduce el siguiente texto al {target_lang}. "
-            "Responde ÚNICAMENTE con la traducción directa, fiel y literal del material original. "
+            "Responde UNICAMENTE con la traduccion directa, fiel y literal del material original. "
             "Conserva el tono exacto y la jerga sin suavizar ni censurar el contenido. "
             f"Texto a traducir:\n\n{message}"
         )
         messages_payload.append({"role": "user", "content": prompt})
-        
+
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages_payload,
             max_tokens=1000,
-            temperature=0.3
+            temperature=0.3,
         )
         return response.choices[0].message.content
 
+
 class handler(BaseTranslatorHandler):
     def do_POST(self):
-        try:
-            content_length = int(self.headers.get('Content-Length', 0))
-            if content_length == 0:
-                self._send_json_response(400, {"error": "El mensaje no tiene contenido."})
-                return
-                
-            payload = json.loads(self.rfile.read(content_length))
-            message = payload.get("message", "").strip()
-            target_lang = payload.get("target_language")
-            chat_history = payload.get("history", [])
-            
-            if not message or not target_lang:
-                self._send_json_response(400, {"error": "Faltan parámetros requeridos."})
-                return
+        payload, error, status = self._read_json()
+        if error:
+            self._send_json(status, {"error": error})
+            return
 
+        message = str(payload.get("message") or "").strip()
+        target_lang = payload.get("target_language")
+        history = payload.get("history") if isinstance(payload.get("history"), list) else []
+
+        if not message:
+            self._send_json(400, {"error": "El mensaje esta vacio."})
+            return
+        if len(message) > MAX_MESSAGE_CHARS:
+            self._send_json(413, {"error": f"El mensaje excede los {MAX_MESSAGE_CHARS} caracteres."})
+            return
+        if not valid_language(target_lang):
+            self._send_json(400, {"error": "Idioma destino no valido. Usa 'es' o 'en'."})
+            return
+
+        try:
             translator = ChatTranslator()
-            translated_text = translator.translate_message(message, target_lang, chat_history)
-            
-            self._send_json_response(200, {
+            translated_text = translator.translate_message(message, target_lang.lower(), history)
+            self._send_json(200, {
                 "original_text": message,
-                "translated_text": translated_text
+                "translated_text": translated_text,
             })
-            
-        except Exception as e:
-            self._send_json_response(500, {"error": f"Error en el servidor: {str(e)}"})
+        except Exception as exc:
+            print(f"[chat] error interno: {exc}", flush=True)
+            self._send_json(500, {"error": "Error al traducir el mensaje. Intentalo de nuevo."})
